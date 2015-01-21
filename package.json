@@ -8,9 +8,11 @@
   },
   "preferGlobal": true,
   "bin": {
+    "git-container": "bin/git-container",
     "git-docker": "bin/git-docker",
     "git-run": "bin/git-run",
-    "git-start": "bin/git-start"
+    "git-start": "bin/git-start",
+    "git-build": "bin/git-build"
   },
   "repository": {
     "type": "git",

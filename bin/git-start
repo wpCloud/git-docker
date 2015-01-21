@@ -1,3 +1,3 @@
 #!/bin/sh
 
-echo "Start Git container."
+echo "Start Git Docker container."
