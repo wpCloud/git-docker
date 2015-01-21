@@ -8,7 +8,7 @@ Installation
 ------------
 
 ```sh
-curl --silent https://raw.githubusercontent.com/UsabilityDynamics/git-docker/master/git-docker > /usr/local/bin/git-docker && chmod +x /usr/local/bin/git-docker
+curl --silent https://raw.githubusercontent.com/UsabilityDynamics/git-docker/master/bin/git-docker > /usr/local/bin/git-docker && chmod +x /usr/local/bin/git-docker
 ```
 
 Usage
