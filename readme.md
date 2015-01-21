@@ -7,8 +7,9 @@ This script finds git repos within the given path that have unstaged changes and
 Installation
 ------------
 
-```sh
-curl --silent https://raw.githubusercontent.com/UsabilityDynamics/git-docker/master/bin/git-docker > /usr/local/bin/git-docker && chmod +x /usr/local/bin/git-docker
+Use NPM to install module globally:
+```
+npm install --global UsabilityDynamics/git-docker
 ```
 
 Usage

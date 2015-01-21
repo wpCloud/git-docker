@@ -1,0 +1,25 @@
+{
+  "name": "git-docker",
+  "version": "1.0.0",
+  "description": "git-docker ============",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "preferGlobal": true,
+  "bin": {
+    "git-docker": "bin/git-docker",
+    "git-run": "bin/git-run",
+    "git-start": "bin/git-start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UsabilityDynamics/git-docker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/UsabilityDynamics/git-docker/issues"
+  },
+  "homepage": "https://github.com/UsabilityDynamics/git-docker"
+}
