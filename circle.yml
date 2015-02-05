@@ -14,7 +14,7 @@ deployment:
   ##
   production:
     branch: [ "production", "master", "latest", "hotfix" ]
-    owner: UsabilityDynamics
+    owner: wpCloud
     commands:
       - DEPLOY_TARGET=core@fallujah.wpcloud.io make deployment
       - DEPLOY_TARGET=core@ramadi.wpcloud.io make deployment
