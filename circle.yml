@@ -14,10 +14,4 @@ deployment:
       - DEPLOY_TARGET=core@fallujah.wpcloud.io make deployment
       - DEPLOY_TARGET=core@ramadi.wpcloud.io make deployment
       - DEPLOY_TARGET=core@amarah.wpcloud.io make deployment
-  ##
-  ##
-  develop:
-    branch: [ "develop", "development", "staging" ]
-    owner: wpCloud
-    commands:
-      - DEPLOY_TARGET=core@amarah.wpcloud.io make deployment
+      - DEPLOY_TARGET=core@mosul.wpcloud.io make deployment
