@@ -4,6 +4,11 @@ machine:
   node:
     version: v0.11.13
 
+test:
+
+  override:
+    - echo "No tests."
+
 deployment:
   ##
   ##
