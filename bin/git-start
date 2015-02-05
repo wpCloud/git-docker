@@ -80,14 +80,13 @@ function RunDockerContainer {
   ## Build / Rebuild
   ## if [ $_DIFF == "Dockerfile" ]; then echo "match"; fi;
   ## git diff-index --name-only HEAD
+  ## @note we are silencing all errors so a failed build will not stop rocess...
   echo " - Building image <${_IMAGE_NAME}:${_BRANCH}>."
-  docker build --tag=${_IMAGE_NAME}:${_BRANCH} --quiet=true ${_WORK_TREE}
+  docker build --tag=${_IMAGE_NAME}:${_BRANCH} --quiet=true ${_WORK_TREE} >/dev/null 2>&1
 
   ## Remove Old Instance
   ## echo " - Checking for old instances, and removing."
-  ## docker rm -fv ${_HOSTNAME}.${_BRANCH}.git >/dev/null 2>&1
-
-  ## docker rmi -fv ${_HOSTNAME}:${_BRANCH} >/dev/null 2>&1
+  docker rm -fv ${_HOSTNAME}.${_BRANCH}.git >/dev/null 2>&1
 
   ## Create New Instance
   echo " - Starting server <${_HOSTNAME}.${_BRANCH}.git>."

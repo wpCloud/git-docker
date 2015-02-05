@@ -1,0 +1,23 @@
+machine:
+  timezone:
+    America/New_York
+  node:
+    version: v0.11.13
+
+deployment:
+  ##
+  ##
+  production:
+    branch: [ "production", "master", "latest", "hotfix" ]
+    owner: UsabilityDynamics
+    commands:
+      - DEPLOY_TARGET=core@fallujah.wpcloud.io make deployment
+      - DEPLOY_TARGET=core@ramadi.wpcloud.io make deployment
+      - DEPLOY_TARGET=core@amarah.wpcloud.io make deployment
+  ##
+  ##
+  develop:
+    branch: [ "develop", "development", "staging" ]
+    owner: wpCloud
+    commands:
+      - DEPLOY_TARGET=core@amarah.wpcloud.io make deployment
