@@ -32,13 +32,13 @@ function GitDockerStart {
 
   if [ -d ${PWD}/.git ]; then
     ## echo " - You seem to be in a git repo.."
-    export _GIT_DIR=${PWD}/.git
-    export _WORK_TREE=${PWD}
+    GIT_DIR=${PWD}/.git
+    GIT_WORK_TREE=${PWD}
   else
 
     if [[ ${_TAG} != "" ]]; then
-      export _GIT_DIR=$(git config docker.paths.sources)"/${_TAG}/.git";
-      export _WORK_TREE=$(git config docker.paths.sources)"/${_TAG}";
+      GIT_DIR=$(git config docker.paths.sources)"/${_TAG}/.git";
+      GIT_WORK_TREE=$(git config docker.paths.sources)"/${_TAG}";
     else
       echo " - Not in a Git directory and no tag specified. Perhaps clone repository first?"
       return;
@@ -46,17 +46,22 @@ function GitDockerStart {
 
   fi
 
+  if [ $(git config docker.memory.limit) = "" ]; then
+    echo "Please set Docker Memory Limit. e.g. [git config docker.memory.limit 2g]";
+    return;
+  fi;
+
   ## Clone or Refresh
   GitDockerReload ${_TAG};
 
   ## > combine "DiscoDonniePresents/www.discodonniepresents.com"
-  export _TAG=$(basename $(dirname ${_WORK_TREE}))/$(basename ${_WORK_TREE});
+  export _TAG=$(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE});
 
   ## > lowercase "discodonniepresents/www.discodonniepresents.com"
-  export _IMAGE_NAME=$( echo $(basename $(dirname ${_WORK_TREE}))/$(basename ${_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
+  export _IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
 
   ## Create Storage
-  if [ ! -d ${_WORK_TREE} ]; then
+  if [ ! -d ${GIT_WORK_TREE} ]; then
     export _STORAGE_DIR=$(git config docker.paths.storage)"/${_TAG}";
     echo "- Creating storage in <${_STORAGE_DIR}> and setting ownership to <${USER}>."
     chown -R ${USER} ${_STORAGE_DIR}
@@ -64,19 +69,20 @@ function GitDockerStart {
   fi
 
   ## Update settings now that we have git repository...
-  _HOSTNAME=${2:-$(basename `git --git-dir=${_GIT_DIR} rev-parse --show-toplevel`)}
-  _BRANCH=$(git --git-dir=${_GIT_DIR} rev-parse --abbrev-ref HEAD)
+  _HOSTNAME=${2:-$(basename `git --git-dir=${GIT_DIR} rev-parse --show-toplevel`)}
+  _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
   _CONTAINER_NAME=${_HOSTNAME}.${_BRANCH}.git
 
   ## Get variables from existing container.
-  _CURRENT_WWW_PATH=$(docker inspect --format '{{ index .Volumes "/var/www" }}' ${_CONTAINER_NAME})
+  _CONTAINER_WWW_PATH=$(docker inspect --format '{{ index .Volumes "/var/www" }}' ${_CONTAINER_NAME})
+  _CONTAINER_MEMORY_LIMIT=$(git config docker.memory.limit)
 
   ## Build / Rebuild
   ## @note we are silencing all errors so a failed build will not stop rocess...
-  if [ -f "${_WORK_TREE}/Dockerfile" ]; then
+  if [ -f "${GIT_WORK_TREE}/Dockerfile" ]; then
 
     echo " - Building Docker Image <${_IMAGE_NAME}:${_BRANCH}>. (Be advised, we do not, yet, check if Dockerfile has changed since last build.)"
-    docker build --tag=${_IMAGE_NAME}:${_BRANCH} --quiet=true ${_WORK_TREE} >/dev/null 2>&1
+    docker build --tag=${_IMAGE_NAME}:${_BRANCH} --quiet=true ${GIT_WORK_TREE} >/dev/null 2>&1
 
     ## Remove Old Instance
     echo " - Checking for and remvoing old container <${_CONTAINER_NAME}>."
@@ -87,24 +93,22 @@ function GitDockerStart {
     export CONTAINER_ID=$(docker run -itd --restart=always \
       --name=${_CONTAINER_NAME} \
       --hostname=${_HOSTNAME} \
-      --memory=2g \
+      --memory=${_CONTAINER_MEMORY_LIMIT} \
       --add-host=api.wordpress.com:${COREOS_PRIVATE_IPV4} \
       --add-host=downloads.wordpress.com:${COREOS_PRIVATE_IPV4} \
-      --add-host=controller:${COREOS_PRIVATE_IPV4} \
+      --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
       --publish=${COREOS_PRIVATE_IPV4}:${_PORT}:80 \
-      --env=GIT_WORK_TREE=/var/www \
+      --env=GITGIT_WORK_TREE=/var/www \
       --env=GIT_DIR=/home/core/${_HOSTNAME}.git \
-      --volume=${_WORK_TREE}:/var/www/wp-content/storage \
-      --volume=${_WORK_TREE}:/var/www \
-      --volume=/opt/sources/wpCloud/www.wpcloud.io/wp-content/plugins/wp-cloud:/var/www/wp-content/plugins/wp-cloud:ro \
-      --workdir=${_WORK_TREE} \
+      --volume=${GIT_WORK_TREE}:/var/www/wp-content/storage \
+      --volume=${GIT_WORK_TREE}:/var/www \
+      --workdir=${GIT_WORK_TREE} \
       ${_IMAGE_NAME}:${_BRANCH})
 
     echo " - Server started with ID <${CONTAINER_ID}>."
 
   else
-    echo " - No Dockerfile in ${_WORK_TREE}/Dockerfile"
+    echo " - No Dockerfile in ${GIT_WORK_TREE}/Dockerfile"
   fi
 
 }
-

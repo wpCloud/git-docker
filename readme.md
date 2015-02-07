@@ -15,11 +15,12 @@ git docker start
 ```
 
 ```sh
-git docker build
-git docker create
+git docker start
+git docker stop
 git docker restart
 git docker reload
-git docker stop
+git docker build
+git docker shell
 ```
 
 Installation
@@ -50,7 +51,8 @@ Git Docker needs to know into which directories your Git repositories will be cl
 
 ```
 git config --global docker.paths.sources /opt/sources
-git config --global docker.paths.storage /opt/storage
+git config --global docker.paths.sources /opt/sources
+git config --global docker.memory.limit 2g
 ```
 
 As you may be aware, you may view all global Git configurations like so:

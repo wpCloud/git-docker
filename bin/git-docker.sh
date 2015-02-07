@@ -7,6 +7,16 @@
 ## ## Used Global Configurations
 ## git config docker.paths.sources
 ## git config docker.paths.storage
+## git config docker.memory.limit
+##
+## ## Supported Git Environment Variables
+## GIT_DIR
+## GIT_WORK_TREE
+## GIT_AUTHOR_NAME
+## GIT_AUTHOR_EMAIL
+## GIT_COMMITTER_NAME
+## GIT_COMMITTER_EMAIL
+##
 
 ## Setup Conditional Variables
 export GIT_DOCKER_DIRECTORY="$(dirname $(readlink -f $0))"
@@ -19,9 +29,9 @@ if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-start.sh" ];    then  source "${GIT_
 if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-stop.sh" ];     then  source "${GIT_DOCKER_DIRECTORY}/git-docker-stop.sh";      fi
 if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-restart.sh" ];  then  source "${GIT_DOCKER_DIRECTORY}/git-docker-restart.sh";   fi
 if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-reload.sh" ];   then  source "${GIT_DOCKER_DIRECTORY}/git-docker-reload.sh";    fi
-if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-build.sh" ];    then  source "${GIT_DOCKER_DIRECTORY}/git-docker-build.sh";      fi
+if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-build.sh" ];    then  source "${GIT_DOCKER_DIRECTORY}/git-docker-build.sh";     fi
 if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-info.sh" ];     then  source "${GIT_DOCKER_DIRECTORY}/git-docker-info.sh";      fi
-if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-shell.sh" ];    then  source "${GIT_DOCKER_DIRECTORY}/git-docker-shell.sh";      fi
+if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-shell.sh" ];    then  source "${GIT_DOCKER_DIRECTORY}/git-docker-shell.sh";     fi
 if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-list.sh" ];     then  source "${GIT_DOCKER_DIRECTORY}/git-docker-list.sh";      fi
 
 ## Route Actions.

@@ -16,13 +16,13 @@ function GitDockerInfo {
     echo " - We are currently in a root Git directory."
 
     if [ -d ${PWD}/.git ]; then
-      export _GIT_DIR=${PWD}/.git
-      export _WORK_TREE=${PWD}
+      GIT_DIR=${PWD}/.git
+      GIT_WORK_TREE=${PWD}
     fi
 
-    _IMAGE_NAME=$( echo $(basename $(dirname ${_WORK_TREE}))/$(basename ${_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
-    _HOSTNAME=${2:-$(basename `git --git-dir=${_GIT_DIR} rev-parse --show-toplevel`)}
-    _BRANCH=$(git --git-dir=${_GIT_DIR} rev-parse --abbrev-ref HEAD)
+    _IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
+    _HOSTNAME=${2:-$(basename `git --git-dir=${GIT_DIR} rev-parse --show-toplevel`)}
+    _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
     _CONTAINER_NAME=${_HOSTNAME}.${_BRANCH}.git
     ## _CURRENT_WWW_PATH=$(docker inspect --format '{{ index .Volumes "/var/www" }}' ${_CONTAINER_NAME})
 
