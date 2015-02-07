@@ -12,6 +12,8 @@
     "git-docker-start": "bin/git-docker-start.sh",
     "git-docker-restart": "bin/git-docker-restart.sh",
     "git-docker-reload": "bin/git-docker-reload.sh",
+    "git-docker-list": "bin/git-docker-list.sh",
+    "git-docker-shell": "bin/git-docker-shell.sh",
     "git-docker-stop": "bin/git-docker-stop.sh",
     "git-docker-build": "bin/git-docker-build.sh"
   },

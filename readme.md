@@ -32,8 +32,8 @@ npm install --global UsabilityDynamics/git-docker
 
 On CoreOS, or any other machine without Node installed, you may install this manually. We assume that the ~/.bin directory is added to the $PATH variable.
 ```
-git clone git@github.com:UsabilityDynamics/git-docker.git /opt/sources/UsabilityDynamics/git-docker
-ln -sf /opt/sources/UsabilityDynamics/git-docker/bin/git-docker ~/.bin
+git clone git@github.com:UsabilityDynamics/git-docker.git /opt/sources/wpCloud/git-docker
+ln -sf /opt/sources/wpCloud/git-docker/bin/git-docker.sh ~/.bin/git-docker
 ```
 
 ```
