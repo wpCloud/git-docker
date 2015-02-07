@@ -20,6 +20,7 @@ git docker stop
 git docker restart
 git docker reload
 git docker build
+git docker info
 git docker shell
 ```
 
