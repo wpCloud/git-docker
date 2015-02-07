@@ -12,6 +12,16 @@ function GitDockerReload {
     source /etc/environment
   fi
 
+  if [ "x$(git config docker.paths.sources)" = "x" ]; then
+    echo "Please set Docker Sources path. e.g. [git config --global docker.paths.sources /opt/sources]";
+    return;
+  fi;
+
+  if [ "x$(git config docker.paths.storage)" = "x" ]; then
+    echo "Please set Docker storage path. e.g. [git config --global docker.paths.storage /opt/storage]";
+    return;
+  fi;
+
   if [ -d ${PWD}/.git ]; then
     GIT_DIR=${PWD}/.git
     GIT_WORK_TREE=${PWD}
@@ -26,15 +36,16 @@ function GitDockerReload {
 
   ## Clone or Fetch/Reset/Clean/Pull
   if [ ! -d ${GIT_DIR} ]; then
-    echo " - Cloning to /opt/sources/${_TAG}..."
-    git clone --quiet "git@github.com:${_TAG}.git" "/opt/sources/${_TAG}"
+    echo " - Cloning to ${GIT_WORK_TREE}"
+    git clone --quiet "git@github.com:${_TAG}.git" "${GIT_WORK_TREE}"
   else
     echo " - Refreshing Git repository <${GIT_WORK_TREE}>."
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} fetch --quiet
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} reset --quiet --hard
-    git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} clean --quiet --force -d
+    git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} clean --quiet --force -d --exclude=wp-content/storage
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} pull  --quiet
   fi
+
 
 }
 

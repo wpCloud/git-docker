@@ -9,13 +9,6 @@
 ## git config docker.paths.sources
 ## git config docker.paths.storage
 ##
-##
-## RunDockerContainer DiscoDonniePresents/www.discodonniepresents.com   discodonniepresents.com   50800   develop
-## RunDockerContainer DiscoDonniePresents/www.discodonniepresents.com   discodonniepresents.com   50840
-## RunDockerContainer UsabilityDynamics/www.sample-site.com
-## RunDockerContainer UsabilityDynamics/www.libertybellagents.com
-##
-##
 ## @author potanin@UD
 ## @todo Only fetch passed TAG if not currently in git repository.
 
@@ -29,6 +22,21 @@ function GitDockerStart {
   if [ -f /etc/environment ]; then
     source /etc/environment
   fi
+
+  if [ "x$(git config docker.paths.sources)" = "x" ]; then
+    echo "Please set Docker Sources path. e.g. [git config --global docker.paths.sources /opt/sources]";
+    return;
+  fi;
+
+  if [ "x$(git config docker.paths.storage)" = "x" ]; then
+    echo "Please set Docker storage path. e.g. [git config --global docker.paths.storage /opt/storage]";
+    return;
+  fi;
+
+  if [ "x$(git config docker.memory.limit)" = "x" ]; then
+    echo "Please set Docker Memory Limit. e.g. [git config --global docker.memory.limit 2g]";
+    return;
+  fi;
 
   if [ -d ${PWD}/.git ]; then
     ## echo " - You seem to be in a git repo.."
@@ -46,69 +54,115 @@ function GitDockerStart {
 
   fi
 
-  if [ $(git config docker.memory.limit) = "" ]; then
-    echo "Please set Docker Memory Limit. e.g. [git config docker.memory.limit 2g]";
-    return;
-  fi;
-
   ## Clone or Refresh
   GitDockerReload ${_TAG};
 
   ## > combine "DiscoDonniePresents/www.discodonniepresents.com"
   export _TAG=$(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE});
 
-  ## > lowercase "discodonniepresents/www.discodonniepresents.com"
-  export _IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
-
   ## Create Storage
-  if [ ! -d ${GIT_WORK_TREE} ]; then
+  if [ -d ${GIT_WORK_TREE} ]; then
     export _STORAGE_DIR=$(git config docker.paths.storage)"/${_TAG}";
-    echo "- Creating storage in <${_STORAGE_DIR}> and setting ownership to <${USER}>."
-    chown -R ${USER} ${_STORAGE_DIR}
-    mkdir -p ${_STORAGE_DIR}/media
+    echo " - Creating storage in <${_STORAGE_DIR}> and setting ownership to <${USER}>."
+    mkdir -p ${_STORAGE_DIR}
+    sudo chown -R ${USER} ${_STORAGE_DIR}
   fi
 
   ## Update settings now that we have git repository...
-  _HOSTNAME=${2:-$(basename `git --git-dir=${GIT_DIR} rev-parse --show-toplevel`)}
+  _HOSTNAME=$( echo $(basename `git --git-dir=${GIT_DIR} rev-parse --show-toplevel`) | tr "." "." )
   _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
-  _CONTAINER_NAME=${_HOSTNAME}.${_BRANCH}.git
+  _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}.git" | tr '[:upper:]' '[:lower:]' )
+  _GLOBAL_IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
+  _LOCAL_IMAGE_NAME=${_HOSTNAME}
+  _CONTAINER_MEMORY_LIMIT=$(git config docker.memory.limit)
 
   ## Get variables from existing container.
-  _CONTAINER_WWW_PATH=$(docker inspect --format '{{ index .Volumes "/var/www" }}' ${_CONTAINER_NAME})
-  _CONTAINER_MEMORY_LIMIT=$(git config docker.memory.limit)
+  _CONTAINER_ID=$(docker ps | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
+
+  if [ "x${_CONTAINER_ID}" != "x" ]; then
+    _PUBLISH_PORT=$(docker port ${_CONTAINER_NAME} 80)
+  else
+    _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
+  fi
 
   ## Build / Rebuild
   ## @note we are silencing all errors so a failed build will not stop rocess...
   if [ -f "${GIT_WORK_TREE}/Dockerfile" ]; then
 
-    echo " - Building Docker Image <${_IMAGE_NAME}:${_BRANCH}>. (Be advised, we do not, yet, check if Dockerfile has changed since last build.)"
-    docker build --tag=${_IMAGE_NAME}:${_BRANCH} --quiet=true ${GIT_WORK_TREE} >/dev/null 2>&1
+    echo " - Building image <${_HOSTNAME}:${_BRANCH}> from Dockerfile. (Be advised, we do not, yet, check if Dockerfile has changed since last build.)"
+    docker build --tag=${_LOCAL_IMAGE_NAME}:${_BRANCH} --quiet=true ${GIT_WORK_TREE} >/dev/null 2>&1
 
     ## Remove Old Instance
-    echo " - Checking for and remvoing old container <${_CONTAINER_NAME}>."
-    docker rm -fv ${_CONTAINER_NAME} >/dev/null 2>&1
+    if [ "x${_CONTAINER_ID}" != "x" ]; then
+      echo " - Removing old container <${_CONTAINER_NAME}>."
+      docker rm -fv ${_CONTAINER_NAME} >/dev/null 2>&1
+    fi;
 
     ## Create New Instance
     echo " - Starting server <${_HOSTNAME}.${_BRANCH}.git>."
-    export CONTAINER_ID=$(docker run -itd --restart=always \
+    NEW_CONTAINER_ID=$(docker run -itd --restart=always \
       --name=${_CONTAINER_NAME} \
       --hostname=${_HOSTNAME} \
       --memory=${_CONTAINER_MEMORY_LIMIT} \
       --add-host=api.wordpress.com:${COREOS_PRIVATE_IPV4} \
       --add-host=downloads.wordpress.com:${COREOS_PRIVATE_IPV4} \
       --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
-      --publish=${COREOS_PRIVATE_IPV4}:${_PORT}:80 \
-      --env=GITGIT_WORK_TREE=/var/www \
-      --env=GIT_DIR=/home/core/${_HOSTNAME}.git \
-      --volume=${GIT_WORK_TREE}:/var/www/wp-content/storage \
+      --publish=${_PUBLISH_PORT}:80 \
+      --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
+      --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
+      --env=GIT_WORK_TREE=/var/www \
+      --env=GIT_DIR=/var/www/.git \
+      --volume=${_STORAGE_DIR}:/var/storage \
       --volume=${GIT_WORK_TREE}:/var/www \
-      --workdir=${GIT_WORK_TREE} \
-      ${_IMAGE_NAME}:${_BRANCH})
-
-    echo " - Server started with ID <${CONTAINER_ID}>."
+      --workdir=/var/www \
+      ${_LOCAL_IMAGE_NAME}:${_BRANCH})
 
   else
-    echo " - No Dockerfile in ${GIT_WORK_TREE}/Dockerfile"
+
+    ## Remove Old Instance
+    if [ "x${_CONTAINER_ID}" != "x" ]; then
+      echo " - Removing old container <${_CONTAINER_ID}>."
+      docker rm -fv ${_CONTAINER_NAME} >/dev/null 2>&1
+    fi;
+
+    ## Create New Instance
+    echo " - Starting container <${_CONTAINER_NAME}> using the <wpcloud/site> image."
+    NEW_CONTAINER_ID=$(docker run -itd --restart=always \
+      --name=${_CONTAINER_NAME} \
+      --hostname=${_HOSTNAME} \
+      --memory=${_CONTAINER_MEMORY_LIMIT} \
+      --add-host=api.wordpress.com:${COREOS_PRIVATE_IPV4} \
+      --add-host=downloads.wordpress.com:${COREOS_PRIVATE_IPV4} \
+      --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
+      --publish=${_PUBLISH_PORT}:80 \
+      --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
+      --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
+      --env=GIT_WORK_TREE=/var/www \
+      --env=GIT_DIR=/opt/sources/${_CONTAINER_NAME} \
+      --volume=/home/core/.ssh:/home/core/.ssh \
+      --volume=${GIT_DIR}:/opt/sources/${_CONTAINER_NAME} \
+      --volume=${GIT_WORK_TREE}:/var/www \
+      --volume=${_STORAGE_DIR}:/var/storage \
+      --workdir=/var/www \
+      wpcloud/site)
+
+    ## @note Right now they are linked because we mount /var/www...
+    ## echo " - Checking-out <${_BRANCH}> branch in container."
+    ## docker exec ${NEW_CONTAINER_ID} git checkout ${_BRANCH}
+
+    docker exec ${NEW_CONTAINER_ID} git config --global push.default matching
+
+  fi
+
+  if [ "x${NEW_CONTAINER_ID}" != "x" ]; then
+    echo " - Server started with ID <${NEW_CONTAINER_ID}>."
+
+    ## git config --global docker.webhooks.slack T02C4SEGN/B03AGFH7E/2EPfLT2rglQsyGdvmnRpkf3p
+    if [ "x$(git config docker.webhooks.slack)" != "x" ]; then
+      echo " - Posting WebHooks."
+      curl -X POST --data-urlencode 'payload={"channel": "#delivery", "username": "'${_HOSTNAME}'", "text": "Container for ['${_BRANCH}'] branch started on ['$(hostname -s)'.wpcloud.io] using internal address [http://'$(docker port ${_CONTAINER_NAME} 80)'].", "icon_emoji": ":cloud:"}' "https://hooks.slack.com/services/$(git config docker.webhooks.slack)"
+    fi
+
   fi
 
 }

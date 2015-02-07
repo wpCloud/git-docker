@@ -12,5 +12,7 @@ function GitDockerRestart {
     source /etc/environment
   fi
 
+
+
 }
 

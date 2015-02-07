@@ -4,8 +4,17 @@
 * We automatically "refresh" git git repository by cleaning, resetting, fetching and pulling the current branch on `git docker restart` and `git docker reload` commands.
 * The `git docker restart` and `git docker reload` commands will start the container if it does not exist.
 
-Usage
------
+### Concepts
+
+- Single end-point for all CoreOs machines to trigger Git Docker commands.
+- Clone repository if does not exist, otherwise reset/pull/clean.
+- Create /opt/storage directories automatically if they don't exist.
+- Rebuild image when Dockerfile changes.
+- Create container with branch/sha information environment variable / name / etc.
+- Allow CircleCI to call via SSH and not fail on any recoverable step to avoid CCI deployment from failing.
+
+
+### Usage
 If a site/app repository has a Dockerfile it may be run. Additional settings may be stored in package.json or composer.json.
 
 ```sh
@@ -24,8 +33,7 @@ git docker info
 git docker shell
 ```
 
-Installation
-------------
+### Installation
 
 Use NPM to install module globally:
 ```
@@ -43,8 +51,7 @@ export PATH=$PATH:/home/core/.bin
 git-docker info
 ```
 
-Global Configuration
-====================
+###  Global Configuration
 Git Docker needs to know into which directories your Git repositories will be cloned.
 
 * /opt/sources/{OrganizationName}/{RepositoryName} - Default for repositories. The internals are mounted to /var/www
