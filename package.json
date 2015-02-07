@@ -8,11 +8,12 @@
   },
   "preferGlobal": true,
   "bin": {
-    "git-container": "bin/git-container",
-    "git-docker": "bin/git-docker",
-    "git-run": "bin/git-run",
-    "git-start": "bin/git-start",
-    "git-build": "bin/git-build"
+    "git-docker": "bin/git-docker.sh",
+    "git-docker-start": "bin/git-docker-start.sh",
+    "git-docker-restart": "bin/git-docker-restart.sh",
+    "git-docker-reload": "bin/git-docker-reload.sh",
+    "git-docker-stop": "bin/git-docker-stop.sh",
+    "git-docker-build": "bin/git-docker-build.sh"
   },
   "repository": {
     "type": "git",
