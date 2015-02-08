@@ -1,10 +1,12 @@
 #!/bin/sh
+## source /opt/sources/wpCloud/git-docker/bin/utility.sh
 ##
-## source /opt/sources/wpCloud/git-docker/bin/utility.sh  && updateRemotes
 ##
-function updateRemotes {
+## GitDockerUpdateRemotes /opt/sources/UsabilityDynamics
+##
+function GitDockerUpdateRemotes {
 
-  for d in /opt/sources/UsabilityDynamics/* ; do
+  for d in ${1}/* ; do
     _NAME=$(basename ${d})
 
     cd ${d};
@@ -49,11 +51,12 @@ function updateRemotes {
 }
 
 ##
+## Useful to rebuilding all containers if a source image has changed, for instance.
 ##
-## source /opt/sources/wpCloud/git-docker/bin/utility.sh  && startAll
-function startAll {
+## GitDockerRestartAll /opt/sources/UsabilityDynamics
+function GitDockerRestartAll {
 
-  for d in /opt/sources/UsabilityDynamics/* ; do
+  for d in ${1}/* ; do
     _NAME=$(basename ${d})
 
     cd ${d};
@@ -70,7 +73,7 @@ function startAll {
 ##
 ##
 ##
-function startAbstract {
+function GitDockerStartAbstract {
 
   _CONTAINER_NAME=test.container
   _HOSTNAME=test.container
