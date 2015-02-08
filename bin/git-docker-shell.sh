@@ -39,9 +39,40 @@ function GitDockerShell {
 
   _HOSTNAME=${2:-$(basename `git --git-dir=${GIT_DIR} rev-parse --show-toplevel`)}
   _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
-  _CONTAINER_NAME=${_HOSTNAME}.${_BRANCH}.git
+  _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}.git" | tr '[:upper:]' '[:lower:]' )
 
-  echo " - Entering ${_CONTAINER_NAME} in ${GIT_DIR}."
+  ## Get variables from existing container.
+  _CONTAINER_ID=$(docker ps | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
+
+  if [ "x${_CONTAINER_ID}" = "x" ]; then
+    echo " - Container does not appear to be running. Trying [git docker start] first.";
+    return;
+  fi;
+
+  ## echo " - Entering ${_CONTAINER_NAME} in ${GIT_DIR}."
+  if [ "x$(git config --global user.email)" != "x" ]; then
+    docker exec ${_CONTAINER_NAME} git config --global user.email $(git config --global user.email)
+  fi;
+
+  if [ "x$(git config --global user.name)" != "x" ]; then
+    docker exec ${_CONTAINER_NAME} git config --global user.name $(git config --global user.name)
+  fi;
+
+  if [ "x$(git config --global push.default)" != "x" ]; then
+    docker exec ${_CONTAINER_NAME} git config --global push.default $(git config --global push.default)
+  fi;
+
+  ## Fix github key and config file location and permissions.
+  if [ -f "${GIT_WORK_TREE}/wp-content/static/ssh/github.pem" ]; then
+    docker exec ${_CONTAINER_NAME} chmod 0600 /var/www/wp-content/static/ssh/github.pem
+
+    if [ -f "${GIT_WORK_TREE}/wp-content/static/ssh/config"  ]; then
+      ## echo "Fixing permissions for GitHub SSH key in <wp-content/static/ssh/github.pem>."
+      docker exec ${_CONTAINER_NAME} ln -sf /var/www/wp-content/static/ssh/config /home/core/.ssh
+    fi;
+
+  fi;
+
   docker exec -it ${_CONTAINER_NAME} /bin/bash
 
 }

@@ -12,6 +12,11 @@ function GitDockerInfo {
     source /etc/environment
   fi
 
+  if [ "x$(git config docker.paths.runtime)" = "x" ]; then
+    echo "Please set Docker runtime path. e.g. [git config --global docker.paths.runtime /opt/runtime]";
+    return;
+  fi;
+
   ## Try using current directory's .git subdirectory
   if [ "x${GIT_DIR}" = "x" ]; then
     GIT_DIR=${PWD}/.git
@@ -29,8 +34,13 @@ function GitDockerInfo {
     _HOSTNAME=${2:-$(basename `git --git-dir=${GIT_DIR} rev-parse --show-toplevel`)}
     _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
 
-    _CONTAINER_NAME=${_HOSTNAME}.${_BRANCH}.git
+    _CONTAINER_NAME=${_HOSTNAME}.${_BRANCH}
     _CONTAINER_ID=$(docker ps | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
+    _CONTAINER_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_NAME} | awk '{print $1}'));
+
+    if [ "x${_CONTAINER_PATH}" != "x" ]; then
+      mkdir -p "$(git config docker.paths.runtime)/${_CONTAINER_PATH}";
+    fi
 
     if [ -f "${GIT_WORK_TREE}/composer.json" ]; then
       echo " - We have a composer.json file."
@@ -41,6 +51,7 @@ function GitDockerInfo {
     echo " - Image Name: [${_IMAGE_NAME}].";
     echo " - Branch Name: [${_BRANCH}].";
     echo " - Container Name: [${_CONTAINER_NAME}].";
+    echo " - Runtime Container Path: [${_CONTAINER_PATH}].";
 
     if [ "x${_CONTAINER_ID}" = "x" ]; then
       echo " - Container not found."
