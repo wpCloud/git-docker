@@ -97,11 +97,11 @@ function GitDockerStart {
     _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
   fi
 
-  _CONTAINER_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_NAME} | awk '{print $1}'));
+  _RUNTIME_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_NAME} | awk '{print $1}'));
 
-  if [ "x${_CONTAINER_PATH}" != "x" ]; then
-    mkdir -p ${_CONTAINER_PATH};
-    echo " - Created container runtime path <${_CONTAINER_PATH}>."
+  if [ "x${_RUNTIME_PATH}" != "x" ]; then
+    mkdir -p ${_RUNTIME_PATH};
+    echo " - Created container runtime path <${_RUNTIME_PATH}>."
   fi
 
   ## Build / Rebuild
@@ -145,7 +145,11 @@ function GitDockerStart {
       docker rm -fv ${_CONTAINER_NAME} >/dev/null 2>&1
     fi;
 
-    ## Create New Instance
+    _LOCAL_IMAGE_NAME="wpcloud/site"
+
+    ## Create New "Dynamic" Instance
+    ## --volume=/home/core/.ssh:/home/core/.ssh \
+    ##
     echo " - Starting container <${_CONTAINER_NAME}> using the <wpcloud/site> image."
     NEW_CONTAINER_ID=$(docker run -itd --restart=always \
       --name=${_CONTAINER_NAME} \
@@ -159,23 +163,22 @@ function GitDockerStart {
       --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
       --env=GIT_WORK_TREE=/var/www \
       --env=GIT_DIR=/opt/sources/${_CONTAINER_NAME} \
-      --volume=/home/core/.ssh:/home/core/.ssh \
       --volume=${GIT_DIR}:/opt/sources/${_CONTAINER_NAME} \
       --volume=${GIT_WORK_TREE}:/var/www \
       --volume=${_STORAGE_DIR}:/var/storage \
       --workdir=/var/www \
-      wpcloud/site)
+      ${_LOCAL_IMAGE_NAME})
 
     ## @note Right now they are linked because we mount /var/www...
     ## echo " - Checking-out <${_BRANCH}> branch in container."
     ## docker exec ${NEW_CONTAINER_ID} git checkout ${_BRANCH}
 
-    ## docker exec ${NEW_CONTAINER_ID} ln -sf /var/storage /var/www/wp-content/storage
     ## docker exec ${NEW_CONTAINER_ID} rm -rf /var/www/wp-content/uploads
+    ## docker exec ${NEW_CONTAINER_ID} ln -sf /var/storage /var/www/wp-content/storage
     ## docker exec ${NEW_CONTAINER_ID} ln -sf /var/storage /var/www/wp-content/uploads
-    docker exec ${NEW_CONTAINER_ID} sudo service apache2 start
-    docker exec ${NEW_CONTAINER_ID} sudo service php5-fpm start
-    docker exec ${NEW_CONTAINER_ID} sudo service newrelic-daemon stop
+    ## docker exec ${NEW_CONTAINER_ID} sudo service apache2 start
+    ## docker exec ${NEW_CONTAINER_ID} sudo service php5-fpm start
+    ## docker exec ${NEW_CONTAINER_ID} sudo service newrelic-daemon stop
 
   fi
 
@@ -191,9 +194,12 @@ function GitDockerStart {
     fi
 
     ## git config --global docker.webhooks.wpcloud https://api.wpcloud.io
+    ## git config --global docker.wpcloud.token gpbevhqpubcamtsy
+    ##
+    ## https://api.wpcloud.io/application/v1/provision.jsonhttps://api.wpcloud.io/application/v1/provision.json?access-token=gpbevhqpubcamtsy
     if [ "x$(git config docker.webhooks.wpcloud)" != "x" ]; then
       echo " - Posting WebHook to <api.wpCloud.io>."
-      curl -X POST --data-urlencode 'payload={"channel": "#delivery", "username": "'${_HOSTNAME}'", "branch": "'${_BRANCH}'", "hostname": "'$(hostname -s)'", "address": "'$(docker port ${_CONTAINER_NAME} 80)'"}' "$(git config docker.webhooks.wpcloud)/provision/v1/start"   --silent >/dev/null
+      curl -H "Content-Type: application/json" -d '{ "_id": "'${NEW_CONTAINER_ID}'", "_type": "container", "image": "'${_LOCAL_IMAGE_NAME}'", "name": "'${_CONTAINER_NAME}'", "branch": "'${_BRANCH}'", "hostname": "'$(hostname)'", "address": "'$(docker port ${_CONTAINER_NAME} 80)'"}' "$(git config docker.webhooks.wpcloud)/application/v1/provision.json?access-token=$(git config docker.wpcloud.token)" --silent >/dev/null
     fi;
 
   fi

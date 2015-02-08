@@ -67,11 +67,3 @@ As you may be aware, you may view all global Git configurations like so:
 ```
 git config -l
 ```
-
-
-### Accessing Volume Mount
-
-
-sudo su 
-cd /var/lib/docker/vfs/dir/ae81fffd2207d5ccad75d8f153eab548a4c8e84921187ac1b3bc8146eb1794ff
-su core

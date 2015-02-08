@@ -36,10 +36,10 @@ function GitDockerInfo {
 
     _CONTAINER_NAME=${_HOSTNAME}.${_BRANCH}
     _CONTAINER_ID=$(docker ps | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
-    _CONTAINER_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_NAME} | awk '{print $1}'));
+    _RUNTIME_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_NAME} | awk '{print $1}'));
 
-    if [ "x${_CONTAINER_PATH}" != "x" ]; then
-      mkdir -p "$(git config docker.paths.runtime)/${_CONTAINER_PATH}";
+    if [ "x${_RUNTIME_PATH}" != "x" ]; then
+      mkdir -p "$(git config docker.paths.runtime)/${_RUNTIME_PATH}";
     fi
 
     if [ -f "${GIT_WORK_TREE}/composer.json" ]; then
@@ -51,7 +51,7 @@ function GitDockerInfo {
     echo " - Image Name: [${_IMAGE_NAME}].";
     echo " - Branch Name: [${_BRANCH}].";
     echo " - Container Name: [${_CONTAINER_NAME}].";
-    echo " - Runtime Container Path: [${_CONTAINER_PATH}].";
+    echo " - Runtime Container Path: [${_RUNTIME_PATH}].";
 
     if [ "x${_CONTAINER_ID}" = "x" ]; then
       echo " - Container not found."
