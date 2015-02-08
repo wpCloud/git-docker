@@ -32,6 +32,9 @@ git docker build
 git docker info
 git docker shell - When ran from a Git/Docker directory, will start shell within the running container.
 ```
+## Automation
+
+http://content.screencast.com/users/AndyPotanin/folders/Jing/media/3463dad2-3291-4584-8042-f0e222eb1bac/00000168.png
 
 ### Installation
 
