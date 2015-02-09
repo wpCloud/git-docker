@@ -70,32 +70,55 @@ function GitDockerStart {
   ## > combine "DiscoDonniePresents/www.discodonniepresents.com"
   export _TAG=$(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE});
 
-  ## Create Storage
-  if [ -d ${GIT_WORK_TREE} ]; then
-    export _STORAGE_DIR=$(git config docker.paths.storage)"/${_TAG}";
-    echo " - Creating storage in <${_STORAGE_DIR}> and setting ownership to <${USER}>."
-    mkdir -p ${_STORAGE_DIR}
-    # nohup sudo chown -R ${USER} ${_STORAGE_DIR} >/dev/null 2>&1
-  fi
-
   ## Update settings now that we have git repository...
-  _HOSTNAME=$( echo $(basename `git --git-dir=${GIT_DIR} rev-parse --show-toplevel`) | tr "." "." )
+  _REPOSITORY_NAME=$(basename $(git remote show -n origin | grep Fetch | cut -d: -f2-))
+  _HOSTNAME=${_REPOSITORY_NAME}
   _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
   _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}.git" | tr '[:upper:]' '[:lower:]' )
   _GLOBAL_IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
   _LOCAL_IMAGE_NAME=${_HOSTNAME}
   _CONTAINER_MEMORY_LIMIT=$(git config docker.memory.limit)
 
+  ## Create Storage
+  if [ -d ${GIT_WORK_TREE} ]; then
+    export _STORAGE_DIR=$(git config docker.paths.storage)"/${_REPOSITORY_NAME}";
+    echo " - Creating storage in <${_STORAGE_DIR}> and setting ownership to <${USER}>."
+    mkdir -p ${_STORAGE_DIR}
+    # nohup sudo chown -R ${USER} ${_STORAGE_DIR} >/dev/null 2>&1
+  fi
+
   ## Get variables from existing container.
-  _OLD_CONTAINER_ID=$(docker ps | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
-  ## echo $(docker ps | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
+  _OLD_CONTAINER_ID=$(docker ps -a | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
+
+  ## echo $(docker ps -a | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
   ## docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${_CID}
 
-  if [ "x${_OLD_CONTAINER_ID}" != "x" ]; then
-    _PUBLISH_PORT=$(docker port ${_CONTAINER_NAME} 80)
-  else
-    _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
-  fi
+  #
+  # Commented for now
+  # use _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
+  # instead of condition below.
+  #
+  # Need to add condition which checks if container is active ( running )
+  # Because if not, - _PUBLISH_PORT will be empty ( 0.0.0.0 ) and error will be caused.
+  # peshkov@UD
+  #
+  #if [ "x${_OLD_CONTAINER_ID}" != "x" ]; then
+  #  _PUBLISH_PORT=$(docker port ${_CONTAINER_NAME} 80)
+  #else
+  #  _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
+  #fi
+
+  #
+  # ${_PORT} is always empty!
+  # It's being got from:
+  # export _PORT=${3}
+  # at the beginning of script,
+  # however I do not see how it's being passed to script.
+  # git-docker.sh contains $2 $3 params for 'git docker start', but where they are from?
+  #
+  # peshkov@UD
+  #
+  _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
 
   _RUNTIME_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_NAME} | awk '{print $1}'));
 
