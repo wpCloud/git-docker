@@ -152,6 +152,7 @@ function GitDockerStart {
       --name=${_CONTAINER_NAME} \
       --hostname=${_HOSTNAME} \
       --memory=${_CONTAINER_MEMORY_LIMIT} \
+      --add-host=localhost:127.0.0.1 \
       --add-host=api.wordpress.com:${COREOS_PRIVATE_IPV4} \
       --add-host=downloads.wordpress.com:${COREOS_PRIVATE_IPV4} \
       --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
@@ -183,6 +184,7 @@ function GitDockerStart {
       --name=${_CONTAINER_NAME} \
       --hostname=${_HOSTNAME} \
       --memory=${_CONTAINER_MEMORY_LIMIT} \
+      --add-host=localhost:127.0.0.1 \
       --add-host=api.wordpress.com:${COREOS_PRIVATE_IPV4} \
       --add-host=downloads.wordpress.com:${COREOS_PRIVATE_IPV4} \
       --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
