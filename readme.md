@@ -62,8 +62,9 @@ Git Docker needs to know into which directories your Git repositories will be cl
 
 ```
 git config --global docker.paths.sources /opt/sources
-git config --global docker.paths.sources /opt/sources
-git config --global docker.memory.limit 2g
+git config --global docker.paths.runtime /opt/runtime
+git config --global docker.paths.storage /opt/storage
+git config --global docker.memory.limit 3g
 ```
 
 As you may be aware, you may view all global Git configurations like so:

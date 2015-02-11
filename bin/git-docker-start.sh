@@ -79,6 +79,11 @@ function GitDockerStart {
   _LOCAL_IMAGE_NAME=${_HOSTNAME}
   _CONTAINER_MEMORY_LIMIT=$(git config docker.memory.limit)
 
+  ## Set Default Memory Limit
+  # if [ "x${_CONTAINER_MEMORY_LIMIT}" != "x" ]; then
+  #   _CONTAINER_MEMORY_LIMIT=2g
+  # fi;
+
   ## Create Storage
   if [ -d ${GIT_WORK_TREE} ]; then
     export _STORAGE_DIR=$(git config docker.paths.storage)"/${_REPOSITORY_NAME}";
@@ -203,6 +208,11 @@ function GitDockerStart {
     ## docker exec ${NEW_CONTAINER_ID} sudo service php5-fpm start
     ## docker exec ${NEW_CONTAINER_ID} sudo service newrelic-daemon stop
 
+  fi
+
+  ## Record used port.
+  if [ "x${_PUBLISH_PORT}" != "x" ]; then
+    git config docker.port = ${_PUBLISH_PORT}
   fi
 
   ## $(docker inspect --format '{{ .State.Pid }}' ${NEW_CONTAINER_ID}])
