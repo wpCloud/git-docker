@@ -28,23 +28,23 @@ function GitDockerStart {
     source /etc/environment
   fi
 
-  if [ "x$(git config docker.paths.sources)" = "x" ]; then
+  if [ "x$(git config --global docker.paths.sources)" = "x" ]; then
     echo "Please set Docker Sources path. e.g. [git config --global docker.paths.sources /opt/sources]";
     return;
   fi;
 
-  if [ "x$(git config docker.paths.runtime)" = "x" ]; then
+  if [ "x$(git config --global docker.paths.runtime)" = "x" ]; then
     echo "Please set Docker runtime path. e.g. [git config --global docker.paths.runtime /opt/runtime]";
     return;
   fi;
 
-  if [ "x$(git config docker.paths.storage)" = "x" ]; then
+  if [ "x$(git config --global docker.paths.storage)" = "x" ]; then
     echo "Please set Docker storage path. e.g. [git config --global docker.paths.storage /opt/storage]";
     return;
   fi;
 
   if [ "x$(git config docker.memory.limit)" = "x" ]; then
-    echo "Please set Docker Memory Limit. e.g. [git config --global docker.memory.limit 2g]";
+    echo "Please set Docker Memory Limit. e.g. [git config --global docker.memory.limit 6g]";
     return;
   fi;
 
@@ -76,6 +76,7 @@ function GitDockerStart {
   _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
   _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}.git" | tr '[:upper:]' '[:lower:]' )
   _GLOBAL_IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
+  _ORGANIZATION_NAME=$(basename $(dirname ${GIT_WORK_TREE}))
   _LOCAL_IMAGE_NAME=${_HOSTNAME}
   _CONTAINER_MEMORY_LIMIT=$(git config docker.memory.limit)
 
@@ -86,51 +87,45 @@ function GitDockerStart {
 
   ## Create Storage
   if [ -d ${GIT_WORK_TREE} ]; then
-    export _STORAGE_DIR=$(git config docker.paths.storage)"/${_REPOSITORY_NAME}";
+    export _STORAGE_DIR=$(git config docker.paths.storage)"/${_ORGANIZATION_NAME}/${_REPOSITORY_NAME}";
     echo " - Creating storage in <${_STORAGE_DIR}> and setting ownership to <${USER}>."
     mkdir -p ${_STORAGE_DIR}
     # nohup sudo chown -R ${USER} ${_STORAGE_DIR} >/dev/null 2>&1
   fi
 
   ## Get variables from existing container.
-  _OLD_CONTAINER_ID=$(docker ps -a | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
+  _OLD_CONTAINER_ID=$(git config --local docker.meta.container)
 
-  ## echo $(docker ps -a | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
-  ## docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${_CID}
+  _PUBLISH_PORT=$(git config --local docker.meta.port)
 
-  #
-  # Commented for now
-  # use _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
-  # instead of condition below.
-  #
-  # Need to add condition which checks if container is active ( running )
-  # Because if not, - _PUBLISH_PORT will be empty ( 0.0.0.0 ) and error will be caused.
-  # peshkov@UD
-  #
-  #if [ "x${_OLD_CONTAINER_ID}" != "x" ]; then
-  #  _PUBLISH_PORT=$(docker port ${_CONTAINER_NAME} 80)
-  #else
-  #  _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
+  if [ "x${_PUBLISH_PORT}" = "x" ]; then
+    _PORT=$(git config docker.meta.port);
+    _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
+  fi
+
+  ## Try to get port from git setting.
+  #if [ "x${_PORT}" != "x" ]; then
+  #  _PORT=$(git config docker.meta.port);
   #fi
 
-  #
-  # ${_PORT} is always empty!
-  # It's being got from:
-  # export _PORT=${3}
-  # at the beginning of script,
-  # however I do not see how it's being passed to script.
-  # git-docker.sh contains $2 $3 params for 'git docker start', but where they are from?
-  #
-  # peshkov@UD
-  #
-  _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
+  #_RUNTIME_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_NAME} | awk '{print $1}'));
 
-  _RUNTIME_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_NAME} | awk '{print $1}'));
+  #if [ "x${_RUNTIME_PATH}" != "x" ]; then
+    # mkdir -p ${_RUNTIME_PATH};
+    #echo " - Created container runtime path <${_RUNTIME_PATH}>."
+    #git config --local docker.path.runtime="${_RUNTIME_PATH}"
+  #fi
 
-  if [ "x${_RUNTIME_PATH}" != "x" ]; then
-    mkdir -p ${_RUNTIME_PATH};
-    echo " - Created container runtime path <${_RUNTIME_PATH}>."
-  fi
+  ## echo "_STORAGE_DIR: ${_STORAGE_DIR}";
+  ## echo "_ORGANIZATION_NAME: ${_ORGANIZATION_NAME}";
+  ## echo "_GLOBAL_IMAGE_NAME: ${_GLOBAL_IMAGE_NAME}";
+  ## echo "_REPOSITORY_NAME: ${_REPOSITORY_NAME}";
+  ## echo "_OLD_CONTAINER_ID: ${_OLD_CONTAINER_ID}";
+  ## echo "_CONTAINER_NAME: ${_CONTAINER_NAME}";
+  ## echo "_PUBLISH_PORT: ${_PUBLISH_PORT}";
+  ## echo "_RUNTIME_PATH: ${_RUNTIME_PATH}";
+  ## echo "_RUNTIME_PATH: ${_CONTAINER_MEMORY_LIMIT}";
+
 
   ## Build / Rebuild
   ## @note we are silencing all errors so a failed build will not stop rocess...
@@ -153,18 +148,22 @@ function GitDockerStart {
       --hostname=${_HOSTNAME} \
       --memory=${_CONTAINER_MEMORY_LIMIT} \
       --add-host=localhost:127.0.0.1 \
-      --add-host=api.wordpress.com:${COREOS_PRIVATE_IPV4} \
-      --add-host=downloads.wordpress.com:${COREOS_PRIVATE_IPV4} \
+      --add-host=api.wpcloud.io:${COREOS_PRIVATE_IPV4} \
+      --add-host=downloads.wpcloud.io:${COREOS_PRIVATE_IPV4} \
+      --add-host=repository.wpcloud.io:${COREOS_PRIVATE_IPV4} \
       --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
       --publish=${_PUBLISH_PORT}:80 \
       --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
       --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
+      --env=GIT_BRANCH=${_BRANCH} \
       --env=GIT_WORK_TREE=/var/www \
       --env=GIT_DIR=/var/www/.git \
       --volume=${_STORAGE_DIR}:/var/storage \
       --volume=${GIT_WORK_TREE}:/var/www \
       --workdir=/var/www \
       ${_LOCAL_IMAGE_NAME}:${_BRANCH})
+
+      git config --local docker.meta.container ${NEW_CONTAINER_ID}
 
   else
 
@@ -174,10 +173,13 @@ function GitDockerStart {
       docker rm -fv ${_CONTAINER_NAME} >/dev/null 2>&1
     fi;
 
-    _LOCAL_IMAGE_NAME="wpcloud/site"
+    _LOCAL_IMAGE_NAME=$(git config --local docker.meta.image)
+
+    if [ "x${_LOCAL_IMAGE_NAME}" = "x" ]; then
+      _LOCAL_IMAGE_NAME="wpcloud/site"
+    fi;
 
     ## Create New "Dynamic" Instance
-    ## --volume=/home/core/.ssh:/home/core/.ssh \
     ##
     echo " - Starting container <${_CONTAINER_NAME}> using the <wpcloud/site> image."
     NEW_CONTAINER_ID=$(docker run -itd --restart=always \
@@ -185,12 +187,14 @@ function GitDockerStart {
       --hostname=${_HOSTNAME} \
       --memory=${_CONTAINER_MEMORY_LIMIT} \
       --add-host=localhost:127.0.0.1 \
-      --add-host=api.wordpress.com:${COREOS_PRIVATE_IPV4} \
-      --add-host=downloads.wordpress.com:${COREOS_PRIVATE_IPV4} \
+      --add-host=api.wpcloud.io:${COREOS_PRIVATE_IPV4} \
+      --add-host=downloads.wpcloud.io:${COREOS_PRIVATE_IPV4} \
+      --add-host=repository.wpcloud.io:${COREOS_PRIVATE_IPV4} \
       --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
       --publish=${_PUBLISH_PORT}:80 \
       --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
       --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
+      --env=GIT_BRANCH=${_BRANCH} \
       --env=GIT_WORK_TREE=/var/www \
       --env=GIT_DIR=/opt/sources/${_CONTAINER_NAME} \
       --volume=${GIT_DIR}:/opt/sources/${_CONTAINER_NAME} \
@@ -199,6 +203,7 @@ function GitDockerStart {
       --workdir=/var/www \
       ${_LOCAL_IMAGE_NAME})
 
+    git config --local docker.meta.container ${NEW_CONTAINER_ID}
     ## @note Right now they are linked because we mount /var/www...
     ## echo " - Checking-out <${_BRANCH}> branch in container."
     ## docker exec ${NEW_CONTAINER_ID} git checkout ${_BRANCH}
@@ -213,9 +218,7 @@ function GitDockerStart {
   fi
 
   ## Record used port.
-  if [ "x${_PUBLISH_PORT}" != "x" ]; then
-    git config docker.port = ${_PUBLISH_PORT}
-  fi
+  git config --replace-all docker.meta.port $(docker port ${NEW_CONTAINER_ID} 80)
 
   ## $(docker inspect --format '{{ .State.Pid }}' ${NEW_CONTAINER_ID}])
 
@@ -234,14 +237,15 @@ function GitDockerStart {
 
     fi
 
+    ## git config --global docker.webhooks.wpcloud
     ## git config --global docker.webhooks.wpcloud https://api.wpcloud.io
     ## git config --global docker.wpcloud.token gpbevhqpubcamtsy
     ##
     ## https://api.wpcloud.io/application/v1/provision.jsonhttps://api.wpcloud.io/application/v1/provision.json?access-token=gpbevhqpubcamtsy
-    if [ "x$(git config docker.webhooks.wpcloud)" != "x" ]; then
-      echo " - Posting WebHook to <api.wpCloud.io>."
-      curl -H "Content-Type: application/json" -d '{ "_id": "'${NEW_CONTAINER_ID}'", "_type": "memoryLimit": "'{_CONTAINER_MEMORY_LIMIT}'", "container", "image": "'${_LOCAL_IMAGE_NAME}'", "name": "'${_CONTAINER_NAME}'", "branch": "'${_BRANCH}'", "hostname": "'$(hostname)'", "address": "'$(docker port ${_CONTAINER_NAME} 80)'"}' "$(git config docker.webhooks.wpcloud)/application/v1/provision.json?access-token=$(git config docker.wpcloud.token)" --silent >/dev/null
-    fi;
+    #if [ "x$(git config docker.webhooks.wpcloud)" != "x" ]; then
+    #  echo " - Posting WebHook to <api.wpCloud.io>."
+    #  curl -H "Content-Type: application/json" -d '{ "_id": "'${NEW_CONTAINER_ID}'", "_type": "memoryLimit": "'{_CONTAINER_MEMORY_LIMIT}'", "container", "image": "'${_LOCAL_IMAGE_NAME}'", "name": "'${_CONTAINER_NAME}'", "branch": "'${_BRANCH}'", "hostname": "'$(hostname)'", "address": "'$(docker port ${_CONTAINER_NAME} 80)'"}' "$(git config docker.webhooks.wpcloud)/application/v1/provision.json?access-token=$(git config docker.wpcloud.token)" --silent >/dev/null
+    #fi;
 
   fi
 
