@@ -13,6 +13,24 @@
 - Create container with branch/sha information environment variable / name / etc.
 - Allow CircleCI to call via SSH and not fail on any recoverable step to avoid CCI deployment from failing.
 
+### Setting Git Config
+
+Check settings, either locally within a repo or globally outside of an existing repo.
+```
+git config docker.meta.image
+```
+
+Set some defaults globally:
+```
+git config --global docker.meta.image wpcloud/site:0.4.7
+git config --global docker.meta.image wpcloud/site:latest
+```
+
+### Available Config Options
+
+* docker.meta.port - e.g. "10.10.48.156:49155"
+* docker.meta.image - e.g. "wpcloud/site:0.4.7" or "wpcloud/site:latest"
+* docker.memory.limit - e.g. "8g"
 
 ### Usage
 If a site/app repository has a Dockerfile it may be run. Additional settings may be stored in package.json or composer.json.
