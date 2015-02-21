@@ -154,6 +154,7 @@ function GitDockerStart {
       --hostname=${_HOSTNAME} \
       --memory=${_CONTAINER_MEMORY_LIMIT} \
       --add-host=localhost:127.0.0.1 \
+      --add-host=${_HOSTNAME/www./}:127.0.0.1 \
       --add-host=api.wpcloud.io:${COREOS_PRIVATE_IPV4} \
       --add-host=downloads.wpcloud.io:${COREOS_PRIVATE_IPV4} \
       --add-host=repository.wpcloud.io:${COREOS_PRIVATE_IPV4} \
@@ -193,6 +194,7 @@ function GitDockerStart {
       --hostname=${_HOSTNAME} \
       --memory=${_CONTAINER_MEMORY_LIMIT} \
       --add-host=localhost:127.0.0.1 \
+      --add-host=${_HOSTNAME/www./}:127.0.0.1 \
       --add-host=api.wpcloud.io:${COREOS_PRIVATE_IPV4} \
       --add-host=downloads.wpcloud.io:${COREOS_PRIVATE_IPV4} \
       --add-host=repository.wpcloud.io:${COREOS_PRIVATE_IPV4} \
@@ -202,8 +204,6 @@ function GitDockerStart {
       --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
       --env=GIT_BRANCH=${_BRANCH} \
       --env=GIT_WORK_TREE=/var/www \
-      --env=GIT_DIR=/opt/sources/${_CONTAINER_NAME} \
-      --volume=${GIT_DIR}:/opt/sources/${_CONTAINER_NAME} \
       --volume=${GIT_WORK_TREE}:/var/www \
       --volume=${_STORAGE_DIR}:/var/storage \
       --workdir=/var/www \
@@ -225,7 +225,7 @@ function GitDockerStart {
 
   ## Record used port. Strip out the private IP.
   _PUBLISHED_PORT=$(docker port $(git config --local docker.meta.container) 80);
-  _PUBLISHED_PORT="${_PUBLISH_PORT/${COREOS_PRIVATE_IPV4}:/}"
+  _PUBLISHED_PORT=${_PUBLISHED_PORT/${COREOS_PRIVATE_IPV4}:/}
 
   ## Save published port to git config
   if [ "x${_PUBLISHED_PORT}" != "x" ]; then
@@ -234,6 +234,10 @@ function GitDockerStart {
 
   ## Save Docker Container PID to git config
   git config --replace-all docker.meta.pid $(docker inspect --format '{{ .State.Pid }}' $(git config docker.meta.container))
+
+  ## Save actual Image information.
+  git config --replace-all docker.image.name $(docker inspect --format '{{ .Config.Image }}' $(git config docker.meta.container))
+  git config --replace-all docker.image.id $(docker inspect --format '{{ .Image }}' $(git config docker.meta.container))
 
   if [ "x${NEW_CONTAINER_ID}" != "x" ]; then
     echo " - Server started with ID <${NEW_CONTAINER_ID}>, published to <${_PUBLISHED_PORT}> port."

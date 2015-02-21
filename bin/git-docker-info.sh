@@ -30,16 +30,22 @@ function GitDockerInfo {
   if [ -d "${GIT_DIR}" ]; then
     echo " - We are currently in a root Git directory."
 
+
+    ## Update settings now that we have git repository...
+    _REPOSITORY_NAME=$(basename $(git remote show -n origin | grep Fetch | cut -d: -f2-))
+
+      ## strip '.git" from very end
+    _REPOSITORY_NAME=${_REPOSITORY_NAME/%.git/}
+
+    _HOSTNAME=${_REPOSITORY_NAME}
+
     _IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
-    _HOSTNAME=${2:-$(basename `git --git-dir=${GIT_DIR} rev-parse --show-toplevel`)}
     _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
+
+    _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}.git" | tr '[:upper:]' '[:lower:]' )
 
     _CONTAINER_ID=$(git config --local docker.meta.container)
     _RUNTIME_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_ID} | awk '{print $1}'));
-
-    if [ "x${_RUNTIME_PATH}" != "x" ]; then
-      mkdir -p "$(git config docker.paths.runtime)/${_RUNTIME_PATH}";
-    fi
 
     if [ -f "${GIT_WORK_TREE}/composer.json" ]; then
       echo " - We have a composer.json file."
@@ -47,11 +53,11 @@ function GitDockerInfo {
       echo " - We do not have a composer.json file."
     fi
 
+    echo " - Hostname: [${_HOSTNAME}] and [${_HOSTNAME/www./}].";
     echo " - Image Name: [${_IMAGE_NAME}].";
     echo " - Branch Name: [${_BRANCH}].";
 
-    ## echo " - Container Name: [${_CONTAINER_NAME}].";
-    ## echo " - Runtime Container Path: [${_RUNTIME_PATH}].";
+    echo " - Container Name: [${_CONTAINER_NAME}].";
 
     if [ "x${_CONTAINER_ID}" = "x" ]; then
       echo " - Container not found."
