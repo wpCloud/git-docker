@@ -72,6 +72,10 @@ function GitDockerStart {
 
   ## Update settings now that we have git repository...
   _REPOSITORY_NAME=$(basename $(git remote show -n origin | grep Fetch | cut -d: -f2-))
+
+    ## strip '.git" from very end
+  _REPOSITORY_NAME=${_REPOSITORY_NAME/%.git/}
+
   _HOSTNAME=${_REPOSITORY_NAME}
   _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
   _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}.git" | tr '[:upper:]' '[:lower:]' )
@@ -80,10 +84,10 @@ function GitDockerStart {
   _LOCAL_IMAGE_NAME=${_HOSTNAME}
   _CONTAINER_MEMORY_LIMIT=$(git config docker.memory.limit)
 
-  ## Set Default Memory Limit
-  # if [ "x${_CONTAINER_MEMORY_LIMIT}" != "x" ]; then
-  #   _CONTAINER_MEMORY_LIMIT=2g
-  # fi;
+  _STORAGE_DIR=${_STORAGE_DIR}/\.git/shit}
+
+  ## strip first occurange of '.git" and add .git to the very end.
+  _CONTAINER_NAME="${_CONTAINER_NAME/.git/}.git"
 
   ## Create Storage
   if [ -d ${GIT_WORK_TREE} ]; then
@@ -103,6 +107,9 @@ function GitDockerStart {
     _PUBLISH_PORT="${COREOS_PRIVATE_IPV4}:${_PORT}";
   fi
 
+  ## Strip out our address from "port" (for legacy)
+  _PUBLISH_PORT="${_PUBLISH_PORT/${COREOS_PRIVATE_IPV4}:}"
+
   ## Try to get port from git setting.
   #if [ "x${_PORT}" != "x" ]; then
   #  _PORT=$(git config docker.meta.port);
@@ -116,16 +123,15 @@ function GitDockerStart {
     #git config --local docker.path.runtime="${_RUNTIME_PATH}"
   #fi
 
-  ## echo "_STORAGE_DIR: ${_STORAGE_DIR}";
-  ## echo "_ORGANIZATION_NAME: ${_ORGANIZATION_NAME}";
-  ## echo "_GLOBAL_IMAGE_NAME: ${_GLOBAL_IMAGE_NAME}";
-  ## echo "_REPOSITORY_NAME: ${_REPOSITORY_NAME}";
-  ## echo "_OLD_CONTAINER_ID: ${_OLD_CONTAINER_ID}";
-  ## echo "_CONTAINER_NAME: ${_CONTAINER_NAME}";
-  ## echo "_PUBLISH_PORT: ${_PUBLISH_PORT}";
-  ## echo "_RUNTIME_PATH: ${_RUNTIME_PATH}";
-  ## echo "_RUNTIME_PATH: ${_CONTAINER_MEMORY_LIMIT}";
-
+  ### echo "_STORAGE_DIR: ${_STORAGE_DIR}";
+  ### echo "_ORGANIZATION_NAME: ${_ORGANIZATION_NAME}";
+  ### echo "_GLOBAL_IMAGE_NAME: ${_GLOBAL_IMAGE_NAME}";
+  ### echo "_REPOSITORY_NAME: ${_REPOSITORY_NAME}";
+  ### echo "_OLD_CONTAINER_ID: ${_OLD_CONTAINER_ID}";
+  ### echo "_CONTAINER_NAME: ${_CONTAINER_NAME}";
+  ### echo "_PUBLISH_PORT: ${_PUBLISH_PORT}";
+  ### echo "_RUNTIME_PATH: ${_RUNTIME_PATH}";
+  ### echo "_RUNTIME_PATH: ${_CONTAINER_MEMORY_LIMIT}";
 
   ## Build / Rebuild
   ## @note we are silencing all errors so a failed build will not stop rocess...
@@ -163,7 +169,7 @@ function GitDockerStart {
       --workdir=/var/www \
       ${_LOCAL_IMAGE_NAME}:${_BRANCH})
 
-      git config --local docker.meta.container ${NEW_CONTAINER_ID}
+      git config --local --replace-all docker.meta.container ${NEW_CONTAINER_ID}
 
   else
 
@@ -203,7 +209,7 @@ function GitDockerStart {
       --workdir=/var/www \
       ${_LOCAL_IMAGE_NAME})
 
-    git config --local docker.meta.container ${NEW_CONTAINER_ID}
+    git config --local --replace-all docker.meta.container ${NEW_CONTAINER_ID}
     ## @note Right now they are linked because we mount /var/www...
     ## echo " - Checking-out <${_BRANCH}> branch in container."
     ## docker exec ${NEW_CONTAINER_ID} git checkout ${_BRANCH}
@@ -217,13 +223,20 @@ function GitDockerStart {
 
   fi
 
-  ## Record used port.
-  git config --replace-all docker.meta.port $(docker port ${NEW_CONTAINER_ID} 80)
+  ## Record used port. Strip out the private IP.
+  _PUBLISHED_PORT=$(docker port $(git config --local docker.meta.container) 80);
+  _PUBLISHED_PORT="${_PUBLISH_PORT/${COREOS_PRIVATE_IPV4}:/}"
 
-  ## $(docker inspect --format '{{ .State.Pid }}' ${NEW_CONTAINER_ID}])
+  ## Save published port to git config
+  if [ "x${_PUBLISHED_PORT}" != "x" ]; then
+    git config --replace-all docker.meta.port ${_PUBLISHED_PORT}
+  fi;
+
+  ## Save Docker Container PID to git config
+  git config --replace-all docker.meta.pid $(docker inspect --format '{{ .State.Pid }}' $(git config docker.meta.container))
 
   if [ "x${NEW_CONTAINER_ID}" != "x" ]; then
-    echo " - Server started with ID <${NEW_CONTAINER_ID}>."
+    echo " - Server started with ID <${NEW_CONTAINER_ID}>, published to <${_PUBLISHED_PORT}> port."
 
     ## git config --global docker.webhooks.slack T02C4SEGN/B03AGFH7E/2EPfLT2rglQsyGdvmnRpkf3p
     if [ "x$(git config docker.webhooks.slack)" != "x" ]; then

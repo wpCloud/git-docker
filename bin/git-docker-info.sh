@@ -34,9 +34,8 @@ function GitDockerInfo {
     _HOSTNAME=${2:-$(basename `git --git-dir=${GIT_DIR} rev-parse --show-toplevel`)}
     _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
 
-    _CONTAINER_NAME=${_HOSTNAME}.${_BRANCH}
-    _CONTAINER_ID=$(docker ps | grep "${_CONTAINER_NAME}" |  awk '{print $1}')
-    _RUNTIME_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_NAME} | awk '{print $1}'));
+    _CONTAINER_ID=$(git config --local docker.meta.container)
+    _RUNTIME_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_ID} | awk '{print $1}'));
 
     if [ "x${_RUNTIME_PATH}" != "x" ]; then
       mkdir -p "$(git config docker.paths.runtime)/${_RUNTIME_PATH}";
@@ -50,14 +49,15 @@ function GitDockerInfo {
 
     echo " - Image Name: [${_IMAGE_NAME}].";
     echo " - Branch Name: [${_BRANCH}].";
-    echo " - Container Name: [${_CONTAINER_NAME}].";
-    echo " - Runtime Container Path: [${_RUNTIME_PATH}].";
+
+    ## echo " - Container Name: [${_CONTAINER_NAME}].";
+    ## echo " - Runtime Container Path: [${_RUNTIME_PATH}].";
 
     if [ "x${_CONTAINER_ID}" = "x" ]; then
       echo " - Container not found."
     else
-      _CURRENT_WWW_PATH=$(docker inspect --format '{{ index .Volumes "/var/www" }}' ${_CONTAINER_NAME})
-      _PUBLIC_PORT=$(docker port ${_CONTAINER_NAME} 80)
+      _CURRENT_WWW_PATH=$(docker inspect --format '{{ index .Volumes "/var/www" }}' ${_CONTAINER_ID})
+      _PUBLIC_PORT=$(git config --local docker.meta.port)
       echo " - Active container found using ID [${_CONTAINER_ID}]."
       echo " - Public Port: [${_PUBLIC_PORT}].";
       echo " - Web Path: [${_CURRENT_WWW_PATH}].";
