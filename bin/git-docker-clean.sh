@@ -20,6 +20,7 @@ function GitDockerClean {
   git config --local --unset docker.meta.port
   git config --local --unset docker.meta.pid
   git config --local --unset docker.meta.container
+  git config --local --unset docker.meta.privileged
   git config --local --unset docker.memory.limit
 
 }

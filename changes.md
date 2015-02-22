@@ -1,5 +1,6 @@
 #### 1.0.4
 * Improved [git docker shell] to be able to execute commands within a container if it exists.
+* Added ability to set privileged mode via [docker.meta.privileged] option.
 
 #### 1.0.3
 * Improved the way hostnames are handled and added to containers. 

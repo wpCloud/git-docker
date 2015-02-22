@@ -160,6 +160,7 @@ function GitDockerStart {
       --add-host=repository.wpcloud.io:${COREOS_PRIVATE_IPV4} \
       --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
       --publish=${_PUBLISH_PORT}:80 \
+      --privileged=$(git config --local docker.meta.privileged) \
       --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
       --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
       --env=GIT_BRANCH=${_BRANCH} \
@@ -200,6 +201,7 @@ function GitDockerStart {
       --add-host=repository.wpcloud.io:${COREOS_PRIVATE_IPV4} \
       --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
       --publish=${_PUBLISH_PORT}:80 \
+      --privileged=$(git config --local docker.meta.privileged) \
       --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
       --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
       --env=GIT_BRANCH=${_BRANCH} \
@@ -241,6 +243,10 @@ function GitDockerStart {
 
   if [ "x${NEW_CONTAINER_ID}" != "x" ]; then
     echo " - Server started with ID <${NEW_CONTAINER_ID}>, published to <${_PUBLISHED_PORT}> port."
+
+    if [ "x$(git config --local docker.meta.privileged)" != "x" ]; then
+      echo " - Using priviledged mode."
+    fi
 
     ## git config --global docker.webhooks.slack T02C4SEGN/B03AGFH7E/2EPfLT2rglQsyGdvmnRpkf3p
     if [ "x$(git config docker.webhooks.slack)" != "x" ]; then
