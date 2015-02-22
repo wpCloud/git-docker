@@ -45,11 +45,24 @@ git docker start
 git docker start
 git docker stop
 git docker restart
+git docker clean - Remove all git config settings.
 git docker reload
 git docker build
 git docker info
 git docker shell - When ran from a Git/Docker directory, will start shell within the running container.
 ```
+
+Run a command in Docker container of current repository:
+
+```
+git docker shell composer.phar validate
+```
+
+Start a bash session in current repository.
+```
+git docker shell
+```
+
 ## Automation
 
 http://content.screencast.com/users/AndyPotanin/folders/Jing/media/3463dad2-3291-4584-8042-f0e222eb1bac/00000168.png

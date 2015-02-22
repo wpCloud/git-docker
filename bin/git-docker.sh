@@ -22,7 +22,7 @@
 export GIT_DOCKER_DIRECTORY="$(dirname $(readlink -f $0))"
 export GIT_DOCKER_ACTION=${1}
 
-echo "Running Git Docker."
+## echo "Running Git Docker."
 
 ## Include Bash Script Dependencies
 if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-start.sh" ];    then  source "${GIT_DOCKER_DIRECTORY}/git-docker-start.sh";     fi

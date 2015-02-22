@@ -1,6 +1,8 @@
 #!/bin/sh
 ##
 ## git docker shell
+## git docker shell composer.phar validate
+## git docker shell git status
 ##
 ## @author potanin@UD
 ## @todo Only fetch passed TAG if not currently in git repository.
@@ -48,29 +50,23 @@ function GitDockerShell {
 
   ## echo " - Entering ${_CONTAINER_ID} in ${GIT_DIR}."
   if [ "x$(git config --global user.email)" != "x" ]; then
-    docker exec ${_CONTAINER_ID} git config --global user.email $(git config --global user.email)
+    docker exec ${_CONTAINER_ID} git config --global  --replace-all user.email $(git config --global user.email)
   fi;
 
   if [ "x$(git config --global user.name)" != "x" ]; then
-    docker exec ${_CONTAINER_ID} git config --global user.name $(git config --global user.name)
+    docker exec ${_CONTAINER_ID} git config --global --replace-all  user.name $(git config --global user.name)
   fi;
 
   if [ "x$(git config --global push.default)" != "x" ]; then
-    docker exec ${_CONTAINER_ID} git config --global push.default $(git config --global push.default)
+    docker exec ${_CONTAINER_ID} git config --global --replace-all  push.default $(git config --global push.default)
   fi;
 
-  ## Fix github key and config file location and permissions.
-  if [ -f "${GIT_WORK_TREE}/wp-content/static/ssh/github.pem" ]; then
-    docker exec ${_CONTAINER_ID} chmod 0600 /var/www/wp-content/static/ssh/github.pem
-
-    if [ -f "${GIT_WORK_TREE}/wp-content/static/ssh/config"  ]; then
-      ## echo "Fixing permissions for GitHub SSH key in <wp-content/static/ssh/github.pem>."
-      docker exec ${_CONTAINER_ID} ln -sf /var/www/wp-content/static/ssh/config /home/core/.ssh
-    fi;
-
+  if [ "x$1" != "x" ]; then
+    docker exec -i ${_CONTAINER_ID} $@
+  else
+    echo "Starting terminal ${_CONTAINER_ID}."
+    docker exec -it ${_CONTAINER_ID} /bin/bash
   fi;
-
-  docker exec -it ${_CONTAINER_ID} /bin/bash
 
 }
 
