@@ -23,4 +23,10 @@ function GitDockerClean {
   git config --local --unset docker.meta.privileged
   git config --local --unset docker.memory.limit
 
+  git config --local --unset docker.image.name
+  git config --local --unset docker.image.id
+
+
+  echo "[git/docker] Git settings removed."
+
 }

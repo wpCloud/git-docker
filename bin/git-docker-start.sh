@@ -133,6 +133,11 @@ function GitDockerStart {
   ### echo "_RUNTIME_PATH: ${_RUNTIME_PATH}";
   ### echo "_RUNTIME_PATH: ${_CONTAINER_MEMORY_LIMIT}";
 
+  ## Set Default.
+  if [ "x$(git config --local docker.meta.privileged)" == "x" ]; then
+    git config --local --replace-all docker.meta.privileged "false"
+  fi
+
   ## Build / Rebuild
   ## @note we are silencing all errors so a failed build will not stop rocess...
   if [ -f "${GIT_WORK_TREE}/Dockerfile" ]; then
