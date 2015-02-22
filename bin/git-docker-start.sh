@@ -249,7 +249,7 @@ function GitDockerStart {
   if [ "x${NEW_CONTAINER_ID}" != "x" ]; then
     echo " - Server started with ID <${NEW_CONTAINER_ID}>, published to <${_PUBLISHED_PORT}> port."
 
-    if [ "x$(git config --local docker.meta.privileged)" != "x" ]; then
+    if [ "x$(git config --local docker.meta.privileged)" = "false" ]; then
       echo " - Using priviledged mode."
     fi
 
