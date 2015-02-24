@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ## Create Working Environment
 ##
 ## git docker create git@github.com:DiscoDonniePresents/www.discodonniepresents.com.git

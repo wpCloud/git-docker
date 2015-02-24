@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ## source /opt/sources/wpCloud/git-docker/bin/utility.sh
 ##
 ##

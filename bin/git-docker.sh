@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ##
 ## ## Supported Command Line Arguments
 ## - Repository ID - The {OrganizationName}/{RepositoryName} GitHub-compatible identifier.

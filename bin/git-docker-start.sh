@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ##
 ## If within a Git directory:
 ## git docker start

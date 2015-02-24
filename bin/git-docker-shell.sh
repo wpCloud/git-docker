@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ##
 ## git docker shell
 ## git docker shell composer.phar validate

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ## List Available Repositories / Images / Containers
 ##
 ## git docker list
