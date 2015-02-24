@@ -28,8 +28,7 @@ function GitDockerInfo {
   fi
 
   if [ -d "${GIT_DIR}" ]; then
-    echo " - We are currently in a root Git directory."
-
+    echo "[git/docker] We are currently in a root Git directory."
 
     ## Update settings now that we have git repository...
     _REPOSITORY_NAME=$(basename $(git remote show -n origin | grep Fetch | cut -d: -f2-))

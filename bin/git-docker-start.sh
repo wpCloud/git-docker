@@ -28,18 +28,8 @@ function GitDockerStart {
     source /etc/environment
   fi
 
-  if [ "x$(git config --global docker.paths.sources)" = "x" ]; then
-    echo "Please set Docker Sources path. e.g. [git config --global docker.paths.sources /opt/sources]";
-    return;
-  fi;
-
   if [ "x$(git config --global docker.paths.runtime)" = "x" ]; then
     echo "Please set Docker runtime path. e.g. [git config --global docker.paths.runtime /opt/runtime]";
-    return;
-  fi;
-
-  if [ "x$(git config --global docker.paths.storage)" = "x" ]; then
-    echo "Please set Docker storage path. e.g. [git config --global docker.paths.storage /opt/storage]";
     return;
   fi;
 
@@ -58,7 +48,7 @@ function GitDockerStart {
       GIT_DIR=$(git config docker.paths.sources)"/${_TAG}/.git";
       GIT_WORK_TREE=$(git config docker.paths.sources)"/${_TAG}";
     else
-      echo " - Not in a Git directory and no tag specified. Perhaps clone repository first?"
+      if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] - Not in a Git directory and no tag specified. Perhaps clone repository first?."; fi;
       return;
     fi
 
@@ -92,10 +82,15 @@ function GitDockerStart {
   ## Create Storage
   if [ -d ${GIT_WORK_TREE} ]; then
     export _STORAGE_DIR=$(git config docker.paths.storage)"/${_ORGANIZATION_NAME}/${_REPOSITORY_NAME}";
-    echo " - Creating storage in <${_STORAGE_DIR}> and setting ownership to <${USER}>."
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Creating storage in <${_STORAGE_DIR}> and setting ownership to <${USER}>"; fi;
     mkdir -p ${_STORAGE_DIR}
     # nohup sudo chown -R ${USER} ${_STORAGE_DIR} >/dev/null 2>&1
   fi
+
+  if [ ! -d "${GIT_WORK_TREE}/.git" ]; then
+    echo "[] Not a git repository, exiting.";
+    exit;
+  fi;
 
   ## Get variables from existing container.
   _OLD_CONTAINER_ID=$(git config --local docker.meta.container)
@@ -146,14 +141,14 @@ function GitDockerStart {
 
     ## Remove Old Instance
     if [ "x${_OLD_CONTAINER_ID}" != "x" ]; then
-      echo " - Removing old container <${_OLD_CONTAINER_ID}>."
+      if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Removing old container <${_OLD_CONTAINER_ID}>."; fi;
       docker rm -fv ${_CONTAINER_NAME} >/dev/null 2>&1
     else
-      echo " - No old container found."
+      if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] No old container found."; fi;
     fi;
 
     ## Create New Instance
-    echo " - Starting server <${_HOSTNAME}.${_BRANCH}.git>."
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Starting server <${_HOSTNAME}.${_BRANCH}.git>."; fi;
     NEW_CONTAINER_ID=$(docker run -itd --restart=always \
       --name=${_CONTAINER_NAME} \
       --hostname=${_HOSTNAME} \
@@ -182,7 +177,7 @@ function GitDockerStart {
 
     ## Remove Old Instance
     if [ "x${_OLD_CONTAINER_ID}" != "x" ]; then
-      echo " - Removing old container <${_OLD_CONTAINER_ID}>."
+      if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Removing old container <${_OLD_CONTAINER_ID}>."; fi;
       docker rm -fv ${_CONTAINER_NAME} >/dev/null 2>&1
     fi;
 
@@ -194,7 +189,7 @@ function GitDockerStart {
 
     ## Create New "Dynamic" Instance
     ##
-    echo " - Starting container <${_CONTAINER_NAME}> using the <wpcloud/site> image."
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Starting container <${_CONTAINER_NAME}> using the <wpcloud/site> image."; fi;
     NEW_CONTAINER_ID=$(docker run -itd --restart=always \
       --name=${_CONTAINER_NAME} \
       --hostname=${_HOSTNAME} \
@@ -247,15 +242,18 @@ function GitDockerStart {
   git config --replace-all docker.image.id $(docker inspect --format '{{ .Image }}' $(git config docker.meta.container))
 
   if [ "x${NEW_CONTAINER_ID}" != "x" ]; then
-    echo " - Server started with ID <${NEW_CONTAINER_ID}>, published to <${_PUBLISHED_PORT}> port."
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Server started with ID <${NEW_CONTAINER_ID}>, published to <${_PUBLISHED_PORT}> port."; fi;
+
+    if [[ ${GIT_DOCKER_SILENT} = true ]]; then echo "Server started with ID <${NEW_CONTAINER_ID}>, published to <${_PUBLISHED_PORT}> port."; fi;
 
     if [ "x$(git config --local docker.meta.privileged)" = "false" ]; then
-      echo " - Using priviledged mode."
+      if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Using priviledged mode."; fi;
     fi
 
     ## git config --global docker.webhooks.slack T02C4SEGN/B03AGFH7E/2EPfLT2rglQsyGdvmnRpkf3p
     if [ "x$(git config docker.webhooks.slack)" != "x" ]; then
-      echo " - Posting WebHook to <Slack>."
+
+      if [[ ${GIT_DOCKER_VERBOSE} == true ]]; then echo "[git/docker] Posting WebHook to <Slack>."; fi;
 
       if [ "x${_OLD_CONTAINER_ID}" != "x" ]; then
         curl -X POST --data-urlencode 'payload={"channel": "#delivery", "username": "'${_HOSTNAME}'", "text": "Container for ['${_BRANCH}'] branch on ['$(hostname -s)'.wpcloud.io] reloaded.", "icon_emoji": ":cloud:"}' "https://hooks.slack.com/services/$(git config docker.webhooks.slack)"  --silent >/dev/null

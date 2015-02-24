@@ -1,3 +1,8 @@
+#### 1.0.5
+* Added ability to silence output by adding [--silent] argument.
+* Added ability to display extra debug messages by adding [--verbose] argument.
+* Added ability to interact with arbitrary sources by passing the Organization/Name as an argument.
+
 #### 1.0.4
 * Improved [git docker shell] to be able to execute commands within a container if it exists.
 * Added ability to set privileged mode via [docker.meta.privileged] option.

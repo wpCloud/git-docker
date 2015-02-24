@@ -28,14 +28,14 @@ function GitDockerShell {
       GIT_DIR=$(git config docker.paths.sources)"/${_TAG}/.git";
       GIT_WORK_TREE=$(git config docker.paths.sources)"/${_TAG}";
     else
-      echo " - Not in a Git directory and no tag specified. Perhaps clone repository first?"
+      echo "[git/docker] Not in a Git directory and no tag specified. Perhaps clone repository first?"
       return;
     fi
 
   fi
 
   if [ ! -d ${GIT_DIR} ]; then
-    echo " - Unable to shell, ${GIT_DIR} is not a valid git directory."
+    echo "[git/docker] Unable to shell, ${GIT_DIR} is not a valid git directory."
     return;
   fi
 
@@ -44,7 +44,7 @@ function GitDockerShell {
   _CONTAINER_ID=$(git config --local docker.meta.container)
 
   if [ "x${_CONTAINER_ID}" = "x" ]; then
-    echo " - Container does not appear to be running. Trying [git docker start] first.";
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Container does not appear to be running. Trying [git docker start] first."; fi;
     return;
   fi;
 
@@ -64,7 +64,7 @@ function GitDockerShell {
   if [ "x$1" != "x" ]; then
     docker exec -i ${_CONTAINER_ID} $@
   else
-    echo "Starting terminal ${_CONTAINER_ID}."
+    if [[ ${GIT_DOCKER_VERBOSE} == true ]]; then echo "[git/docker] Starting terminal ${_CONTAINER_ID}."; fi;
     docker exec -it ${_CONTAINER_ID} /bin/bash
   fi;
 

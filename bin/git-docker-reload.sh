@@ -2,7 +2,6 @@
 ##
 ##
 function GitDockerReload {
-  echo " - Reloading Git repository."
 
   export _TAG=${1}
   export _PORT=${3}
@@ -12,15 +11,7 @@ function GitDockerReload {
     source /etc/environment
   fi
 
-  if [ "x$(git config docker.paths.sources)" = "x" ]; then
-    echo "Please set Docker Sources path. e.g. [git config --global docker.paths.sources /opt/sources]";
-    return;
-  fi;
-
-  if [ "x$(git config docker.paths.storage)" = "x" ]; then
-    echo "Please set Docker storage path. e.g. [git config --global docker.paths.storage /opt/storage]";
-    return;
-  fi;
+  if [[ ${GIT_DOCKER_VERBOSE} == true ]]; then echo "[git/docker] Reloading Git repository"; fi;
 
   if [ -d ${PWD}/.git ]; then
     GIT_DIR=${PWD}/.git
@@ -36,16 +27,16 @@ function GitDockerReload {
 
   ## Clone or Fetch/Reset/Clean/Pull
   if [ ! -d ${GIT_DIR} ]; then
-    echo " - Cloning to ${GIT_WORK_TREE}"
-    git clone --quiet "git@github.com:${_TAG}.git" "${GIT_WORK_TREE}"
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Not in a Git repository, clone first."; fi;
+    ## git clone --quiet "git@github.com:${_TAG}.git" "${GIT_WORK_TREE}"
+    exit;
   else
-    echo " - Refreshing Git repository <${GIT_WORK_TREE}>."
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Refreshing Git repository <${GIT_WORK_TREE}>."; fi;
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} fetch --quiet
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} reset --quiet --hard
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} clean --quiet --force -d --exclude=wp-content/storage
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} pull  --quiet
   fi
-
 
 }
 
