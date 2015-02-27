@@ -61,9 +61,6 @@ function GitDockerStart {
     source ~/.git-docker/${GIT_DOCKER_TYPE}.sh
   fi
 
-  ## Clone or Refresh
-  GitDockerReload ${_TAG};
-
   ## > combine "DiscoDonniePresents/www.discodonniepresents.com"
   export _TAG=$(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE});
 
@@ -154,6 +151,9 @@ function GitDockerStart {
       if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] No old container found."; fi;
     fi;
 
+    ## Clone or Refresh
+    GitDockerReload ${_TAG};
+
     ## Create New Instance
     if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Starting server <${_HOSTNAME}.${_BRANCH}.git>."; fi;
     NEW_CONTAINER_ID=$(docker run -itd --restart=always \
@@ -191,6 +191,9 @@ function GitDockerStart {
       if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Removing old container <${_OLD_CONTAINER_ID}>."; fi;
       docker rm -fv ${_CONTAINER_NAME} >/dev/null 2>&1
     fi;
+
+    ## Clone or Refresh
+    GitDockerReload ${_TAG};
 
     _LOCAL_IMAGE_NAME=$(git config --local docker.meta.image)
 
