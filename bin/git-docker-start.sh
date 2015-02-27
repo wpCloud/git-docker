@@ -171,8 +171,6 @@ function GitDockerStart {
       --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
       --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
       --env=GIT_BRANCH=${_BRANCH} \
-      --env=GIT_WORK_TREE=/var/www \
-      --env=GIT_DIR=/var/www/.git \
       --volume=${_STORAGE_DIR}:/var/storage \
       --volume=${GIT_WORK_TREE}:/var/www \
       --workdir=/var/www \
@@ -181,7 +179,7 @@ function GitDockerStart {
       git config --local --replace-all docker.meta.container ${NEW_CONTAINER_ID}
 
       if [ "x${GIT_DOCKER_SCRIPT_ON_START}" != "x" ]; then
-        docker exec ${NEW_CONTAINER_ID} /bin/bash -c "${GIT_DOCKER_SCRIPT_ON_START}"
+        docker exec ${NEW_CONTAINER_ID} /bin/bash -c "${GIT_DOCKER_SCRIPT_ON_START}"  >/dev/null 2>&1;
       fi
 
   else
@@ -217,8 +215,6 @@ function GitDockerStart {
       --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
       --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
       --env=GIT_BRANCH=${_BRANCH} \
-      --env=GIT_WORK_TREE=/var/www \
-      --volume=${GIT_WORK_TREE}:/var/www \
       --volume=${_STORAGE_DIR}:/var/storage \
       --workdir=/var/www \
       ${GIT_DOCKER_RUN_ARGS} ${GIT_DOCKER_IMAGE_NAME}";
@@ -227,7 +223,7 @@ function GitDockerStart {
 
     if [ "x${GIT_DOCKER_SCRIPT_ON_START}" != "x" ]; then
       if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Running the on-start command.."; fi;
-      docker exec ${NEW_CONTAINER_ID} /bin/bash -c "${GIT_DOCKER_SCRIPT_ON_START}"
+      docker exec ${NEW_CONTAINER_ID} /bin/bash -c "${GIT_DOCKER_SCRIPT_ON_START}"  >/dev/null 2>&1;
     fi
 
     git config --local --replace-all docker.meta.container ${NEW_CONTAINER_ID}
@@ -261,9 +257,9 @@ function GitDockerStart {
   git config --replace-all docker.image.id $(docker inspect --format '{{ .Image }}' $(git config docker.meta.container))
 
   if [ "x${NEW_CONTAINER_ID}" != "x" ]; then
-    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Server started with ID <${NEW_CONTAINER_ID}>, published to <${_PUBLISHED_PORT}> port."; fi;
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Server started with ID <${NEW_CONTAINER_ID}> for <${_CONTAINER_NAME}>, published to <${_PUBLISHED_PORT}> port."; fi;
 
-    if [[ ${GIT_DOCKER_SILENT} = true ]]; then echo "Server started with ID <${NEW_CONTAINER_ID}>, published to <${_PUBLISHED_PORT}> port."; fi;
+    if [[ ${GIT_DOCKER_SILENT} = true ]]; then echo "[git/docker] Server started with ID <${NEW_CONTAINER_ID}> for <${_CONTAINER_NAME}>, published to <${_PUBLISHED_PORT}> port."; fi;
 
     if [ "x$(git config --local docker.meta.privileged)" = "false" ]; then
       if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Using priviledged mode."; fi;

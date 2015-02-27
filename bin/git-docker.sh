@@ -53,11 +53,12 @@ if [ "x$(git config --global docker.paths.storage)" = "x" ]; then
   exit;
 fi;
 
-## See if we specify a path, relative to source path.
-if [ ${2:-''} != "" ] && [[ $2 != *"--"* ]]; then
-  if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Setting relative path [$2]."; fi;
-  cd "$(git config --global docker.paths.sources)/${2}"
-fi;
+## Can't remember what this did but it breaks things when doing something like "git docker shell pwd"
+## ## See if we specify a path, relative to source path.
+## if [ ${2:-''} != "" ] && [[ $2 != *"--"* ]]; then
+##   if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Setting relative path [$2]."; fi;
+##   cd "$(git config --global docker.paths.sources)/${2}"
+## fi;
 
 ## Include Bash Script Dependencies
 if [ -f "${GIT_DOCKER_DIRECTORY}/git-docker-start.sh" ];    then  source "${GIT_DOCKER_DIRECTORY}/git-docker-start.sh";     fi
