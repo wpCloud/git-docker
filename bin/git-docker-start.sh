@@ -12,7 +12,6 @@
 ## @author potanin@UD
 ## @todo Only fetch passed TAG if not currently in git repository.
 
-
 function GitDockerStart {
   ## echo "Starting Git Docker container."
 
@@ -52,6 +51,14 @@ function GitDockerStart {
       return;
     fi
 
+  fi
+
+  ## Global Variables Override
+  GIT_DOCKER_TYPE=$(git config --local docker.type)
+
+  if [ -f ~/.git-docker/${GIT_DOCKER_TYPE}.sh ]; then
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Loading ~/.git-docker/${GIT_DOCKER_TYPE}.sh."; fi;
+    source ~/.git-docker/${GIT_DOCKER_TYPE}.sh
   fi
 
   ## Clone or Refresh
@@ -169,9 +176,13 @@ function GitDockerStart {
       --volume=${_STORAGE_DIR}:/var/storage \
       --volume=${GIT_WORK_TREE}:/var/www \
       --workdir=/var/www \
-      ${_LOCAL_IMAGE_NAME}:${_BRANCH})
+      ${GIT_DOCKER_RUN_ARGS} ${_LOCAL_IMAGE_NAME}:${_BRANCH})
 
       git config --local --replace-all docker.meta.container ${NEW_CONTAINER_ID}
+
+      if [ "x${GIT_DOCKER_SCRIPT_ON_START}" != "x" ]; then
+        docker exec ${NEW_CONTAINER_ID} /bin/bash -c "${GIT_DOCKER_SCRIPT_ON_START}"
+      fi
 
   else
 
@@ -183,23 +194,21 @@ function GitDockerStart {
 
     _LOCAL_IMAGE_NAME=$(git config --local docker.meta.image)
 
-    if [ "x${_LOCAL_IMAGE_NAME}" = "x" ]; then
-      _LOCAL_IMAGE_NAME="wpcloud/site"
+    if [ "x${GIT_DOCKER_IMAGE_NAME}" = "x" ]; then
+      GIT_DOCKER_IMAGE_NAME="wpcloud/site"
     fi;
 
     ## Create New "Dynamic" Instance
     ##
     if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Starting container <${_CONTAINER_NAME}> using the <wpcloud/site> image."; fi;
-    NEW_CONTAINER_ID=$(docker run -itd --restart=always \
+
+    ___RUN_COMMAND="docker run -itd --restart=always \
       --name=${_CONTAINER_NAME} \
       --hostname=${_HOSTNAME} \
       --memory=${_CONTAINER_MEMORY_LIMIT} \
       --add-host=localhost:127.0.0.1 \
       --add-host=${_HOSTNAME/www./}:127.0.0.1 \
       --add-host=api.wpcloud.io:${COREOS_PRIVATE_IPV4} \
-      --add-host=downloads.wpcloud.io:${COREOS_PRIVATE_IPV4} \
-      --add-host=repository.wpcloud.io:${COREOS_PRIVATE_IPV4} \
-      --add-host=controller.internal:${COREOS_PRIVATE_IPV4} \
       --publish=${_PUBLISH_PORT}:80 \
       --privileged=$(git config --local docker.meta.privileged) \
       --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
@@ -209,7 +218,14 @@ function GitDockerStart {
       --volume=${GIT_WORK_TREE}:/var/www \
       --volume=${_STORAGE_DIR}:/var/storage \
       --workdir=/var/www \
-      ${_LOCAL_IMAGE_NAME})
+      ${GIT_DOCKER_RUN_ARGS} ${GIT_DOCKER_IMAGE_NAME}";
+
+    NEW_CONTAINER_ID=$(${___RUN_COMMAND})
+
+    if [ "x${GIT_DOCKER_SCRIPT_ON_START}" != "x" ]; then
+      if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Running the on-start command.."; fi;
+      docker exec ${NEW_CONTAINER_ID} /bin/bash -c "${GIT_DOCKER_SCRIPT_ON_START}"
+    fi
 
     git config --local --replace-all docker.meta.container ${NEW_CONTAINER_ID}
     ## @note Right now they are linked because we mount /var/www...
@@ -255,11 +271,12 @@ function GitDockerStart {
 
       if [[ ${GIT_DOCKER_VERBOSE} == true ]]; then echo "[git/docker] Posting WebHook to <Slack>."; fi;
 
-      if [ "x${_OLD_CONTAINER_ID}" != "x" ]; then
-        curl -X POST --data-urlencode 'payload={"channel": "#delivery", "username": "'${_HOSTNAME}'", "text": "Container for ['${_BRANCH}'] branch on ['$(hostname -s)'.wpcloud.io] reloaded.", "icon_emoji": ":cloud:"}' "https://hooks.slack.com/services/$(git config docker.webhooks.slack)"  --silent >/dev/null
-      else
-        curl -X POST --data-urlencode 'payload={"channel": "#delivery", "username": "'${_HOSTNAME}'", "text": "Container for ['${_BRANCH}'] branch started on ['$(hostname -s)'.wpcloud.io] using internal address [http://'$(docker port ${_CONTAINER_NAME} 80)'].", "icon_emoji": ":cloud:"}' "https://hooks.slack.com/services/$(git config docker.webhooks.slack)"  --silent >/dev/null
-      fi
+      ##
+      ##if [ "x${_OLD_CONTAINER_ID}" != "x" ]; then
+      ##  curl -X POST --data-urlencode 'payload={"channel": "#delivery", "username": "'${_HOSTNAME}'", "text": "Container for ['${_BRANCH}'] branch on ['$(hostname -s)'.wpcloud.io] reloaded.", "icon_emoji": ":cloud:"}' "https://hooks.slack.com/services/$(git config docker.webhooks.slack)"  --silent >/dev/null
+      ##else
+      ##  curl -X POST --data-urlencode 'payload={"channel": "#delivery", "username": "'${_HOSTNAME}'", "text": "Container for ['${_BRANCH}'] branch started on ['$(hostname -s)'.wpcloud.io] using internal address [http://'$(docker port ${_CONTAINER_NAME} 80)'].", "icon_emoji": ":cloud:"}' "https://hooks.slack.com/services/$(git config docker.webhooks.slack)"  --silent >/dev/null
+      ##fi
 
     fi
 

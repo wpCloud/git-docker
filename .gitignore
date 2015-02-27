@@ -26,3 +26,7 @@ request_log.txt
 /*.sql.gz
 /.envrc
 npm-debug.log
+/test/fixtures/.git-docker/default.sh
+/test/fixtures/.git-docker/composer-app.sh
+/test/fixtures/.git-docker/wordpress-site.sh
+/test/fixtures/.git-docker/wpcloud.io.sh

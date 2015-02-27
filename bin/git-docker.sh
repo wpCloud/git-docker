@@ -39,6 +39,10 @@ if [[ $@ == *"--debug"* ]]; then
   export GIT_DOCKER_DEBUG="true"
 fi;
 
+if [ -f ~/.git-docker/default.sh ]; then
+  source ~/.git-docker/default.sh
+fi;
+
 if [ "x$(git config --global docker.paths.sources)" = "x" ]; then
   echo "Please set Docker Sources path. e.g. [git config --global docker.paths.sources /opt/sources]";
   exit;

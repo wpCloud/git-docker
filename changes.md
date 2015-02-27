@@ -1,3 +1,7 @@
+#### 1.1.0
+* Added processing of ~/.git-docker hooks.
+* Added "docker.type" concept.
+
 #### 1.0.5
 * Added ability to silence output by adding [--silent] argument.
 * Added ability to display extra debug messages by adding [--verbose] argument.

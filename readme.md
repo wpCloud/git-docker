@@ -13,6 +13,13 @@
 - Create container with branch/sha information environment variable / name / etc.
 - Allow CircleCI to call via SSH and not fail on any recoverable step to avoid CCI deployment from failing.
 
+### Environment Variables
+
+* GIT_DOCKER_TYPE
+* GIT_DOCKER_IMAGE_NAME
+* GIT_DOCKER_CLEAN_ARGS
+* GIT_DOCKER_SCRIPT_ON_START - Ran inside new container using "docker exec"
+
 ### Setting Git Config
 
 Check settings, either locally within a repo or globally outside of an existing repo.

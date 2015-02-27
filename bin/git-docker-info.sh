@@ -30,18 +30,20 @@ function GitDockerInfo {
   if [ -d "${GIT_DIR}" ]; then
     echo "[git/docker] We are currently in a root Git directory."
 
+    GIT_DOCKER_TYPE=$(git config --local docker.type)
+
     ## Update settings now that we have git repository...
     _REPOSITORY_NAME=$(basename $(git remote show -n origin | grep Fetch | cut -d: -f2-))
 
       ## strip '.git" from very end
     _REPOSITORY_NAME=${_REPOSITORY_NAME/%.git/}
-
     _HOSTNAME=${_REPOSITORY_NAME}
 
     _IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
     _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
 
     _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}.git" | tr '[:upper:]' '[:lower:]' )
+
 
     _CONTAINER_ID=$(git config --local docker.meta.container)
     _RUNTIME_PATH=$(git config docker.paths.runtime)/$(echo -n $(md5sum <<< ${_CONTAINER_ID} | awk '{print $1}'));
@@ -52,11 +54,21 @@ function GitDockerInfo {
       echo " - We do not have a composer.json file."
     fi
 
+    if [ -f ~/.git-docker/default.sh ]; then
+      echo " - Custom Git/Docker directory found.";
+    fi;
+
     echo " - Hostname: [${_HOSTNAME}] and [${_HOSTNAME/www./}].";
     echo " - Image Name: [${_IMAGE_NAME}].";
     echo " - Branch Name: [${_BRANCH}].";
 
     echo " - Container Name: [${_CONTAINER_NAME}].";
+
+    if [ "x${GIT_DOCKER_TYPE}" = "x" ]; then
+      echo " - Type is not set."
+    else
+      echo " - Type is set to [${GIT_DOCKER_TYPE}]."
+    fi
 
     if [ "x${_CONTAINER_ID}" = "x" ]; then
       echo " - Container not found."

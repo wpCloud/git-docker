@@ -34,7 +34,7 @@ function GitDockerReload {
     if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Refreshing Git repository <${GIT_WORK_TREE}>."; fi;
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} fetch --quiet
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} reset --quiet --hard
-    git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} clean --quiet --force -d --exclude=wp-content/storage
+    git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} clean --quiet --force -d ${GIT_DOCKER_CLEAN_ARGS}
     git --git-dir=${GIT_DIR} --work-tree=${GIT_WORK_TREE} pull  --quiet
   fi
 
