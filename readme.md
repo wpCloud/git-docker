@@ -31,6 +31,7 @@ Set some defaults globally:
 ```
 git config --global docker.meta.image wpcloud/site:0.4.7
 git config --global docker.meta.image wpcloud/site:latest
+git config --global docker.meta.image wpcloud/nginx-site:0.1.4
 ```
 
 ### Available Config Options

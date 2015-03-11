@@ -72,16 +72,16 @@ function GitDockerStart {
 
   _HOSTNAME=${_REPOSITORY_NAME}
   _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
-  _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}.git" | tr '[:upper:]' '[:lower:]' )
+  _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}" | tr '[:upper:]' '[:lower:]' )
   _GLOBAL_IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
   _ORGANIZATION_NAME=$(basename $(dirname ${GIT_WORK_TREE}))
   _LOCAL_IMAGE_NAME=${_HOSTNAME}
   _CONTAINER_MEMORY_LIMIT=$(git config docker.memory.limit)
 
-  _STORAGE_DIR=${_STORAGE_DIR}/\.git/shit}
+  ##_STORAGE_DIR=${_STORAGE_DIR}/\.git/shit}
 
-  ## strip first occurange of '.git" and add .git to the very end.
-  _CONTAINER_NAME="${_CONTAINER_NAME/.git/}.git"
+  ## strip first occurange of '.git"
+  _CONTAINER_NAME="${_CONTAINER_NAME/.git/}"
 
   ## Create Storage
   if [ -d ${GIT_WORK_TREE} ]; then
@@ -155,7 +155,7 @@ function GitDockerStart {
     GitDockerReload ${_TAG};
 
     ## Create New Instance
-    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Starting server <${_HOSTNAME}.${_BRANCH}.git>."; fi;
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Starting server <${_HOSTNAME}.${_BRANCH}>."; fi;
     NEW_CONTAINER_ID=$(docker run -itd --restart=always \
       --name=${_CONTAINER_NAME} \
       --hostname=${_HOSTNAME} \
@@ -193,15 +193,15 @@ function GitDockerStart {
     ## Clone or Refresh
     GitDockerReload ${_TAG};
 
-    _LOCAL_IMAGE_NAME=$(git config --local docker.meta.image)
+    _LOCAL_IMAGE_NAME=$(git config docker.meta.image)
 
-    if [ "x${GIT_DOCKER_IMAGE_NAME}" = "x" ]; then
-      GIT_DOCKER_IMAGE_NAME="wpcloud/site"
+    if [ "x${_LOCAL_IMAGE_NAME}" = "x" ]; then
+      _LOCAL_IMAGE_NAME="wpcloud/site"
     fi;
 
     ## Create New "Dynamic" Instance
     ##
-    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Starting container <${_CONTAINER_NAME}> using the <wpcloud/site> image."; fi;
+    if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Starting container <${_CONTAINER_NAME}> using the <${_LOCAL_IMAGE_NAME}> image."; fi;
 
     ___RUN_COMMAND="docker run -itd --restart=always \
       --name=${_CONTAINER_NAME} \
@@ -215,9 +215,10 @@ function GitDockerStart {
       --env=DOCKER_IMAGE=${_LOCAL_IMAGE_NAME}:${_BRANCH} \
       --env=DOCKER_CONTAINER=${_CONTAINER_NAME} \
       --env=GIT_BRANCH=${_BRANCH} \
+      --volume=$(pwd):/var/www \
       --volume=${_STORAGE_DIR}:/var/storage \
       --workdir=/var/www \
-      ${GIT_DOCKER_RUN_ARGS} ${GIT_DOCKER_IMAGE_NAME}";
+      ${GIT_DOCKER_RUN_ARGS} ${_LOCAL_IMAGE_NAME}";
 
     NEW_CONTAINER_ID=$(${___RUN_COMMAND})
 
