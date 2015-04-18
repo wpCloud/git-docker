@@ -15,6 +15,7 @@
 
 ### Environment Variables
 
+* GIT_WORK_TREE - The working tree path to use.
 * GIT_DOCKER_TYPE
 * GIT_DOCKER_IMAGE_NAME
 * GIT_DOCKER_CLEAN_ARGS
@@ -104,6 +105,7 @@ git config --global docker.paths.sources /opt/sources
 git config --global docker.paths.runtime /opt/runtime
 git config --global docker.paths.storage /opt/storage
 git config --global docker.memory.limit 3g
+git config --global docker.add_branch_annex true
 ```
 
 As you may be aware, you may view all global Git configurations like so:

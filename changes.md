@@ -1,4 +1,5 @@
 #### 1.1.0
+* Added support for GIT_WORK_TREE environment variable.
 * Added processing of ~/.git-docker hooks.
 * Added "docker.type" concept.
 

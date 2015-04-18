@@ -23,6 +23,12 @@ function GitDockerStart {
   export _PORT=${3}
   export _BRANCH=${4}
 
+  export _ORIGINAL_PWD=${PWD};
+
+  if [[ ${GIT_WORK_TREE} != "" ]]; then
+    cd ${GIT_WORK_TREE};
+  fi;
+
   if [ -f /etc/environment ]; then
     source /etc/environment
   fi
@@ -72,16 +78,26 @@ function GitDockerStart {
 
   _HOSTNAME=${_REPOSITORY_NAME}
   _BRANCH=$(git --git-dir=${GIT_DIR} rev-parse --abbrev-ref HEAD)
-  _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}" | tr '[:upper:]' '[:lower:]' )
+
+  if [ "x$(git config --local docker.meta.name)" = "x" ]; then
+    _CONTAINER_NAME=$( echo "${_HOSTNAME}.${_BRANCH}" | tr '[:upper:]' '[:lower:]' )
+  else
+    _CONTAINER_NAME=$(git config --local docker.meta.name);
+  fi;
+
+  ## strip first occurange of '.git"
+  _CONTAINER_NAME="${_CONTAINER_NAME/.git/}"
+
+  #if [ "x$(git config --global docker.annex)" == "x" ]; then
+  #  _CONTAINER_NAME=$( echo "${_HOSTNAME}" | tr '[:upper:]' '[:lower:]' )
+  #fi
+
   _GLOBAL_IMAGE_NAME=$( echo $(basename $(dirname ${GIT_WORK_TREE}))/$(basename ${GIT_WORK_TREE}) | tr "/" "/" | tr '[:upper:]' '[:lower:]' )
   _ORGANIZATION_NAME=$(basename $(dirname ${GIT_WORK_TREE}))
   _LOCAL_IMAGE_NAME=${_HOSTNAME}
   _CONTAINER_MEMORY_LIMIT=$(git config docker.memory.limit)
 
   ##_STORAGE_DIR=${_STORAGE_DIR}/\.git/shit}
-
-  ## strip first occurange of '.git"
-  _CONTAINER_NAME="${_CONTAINER_NAME/.git/}"
 
   ## Create Storage
   if [ -d ${GIT_WORK_TREE} ]; then
@@ -291,5 +307,7 @@ function GitDockerStart {
     #fi;
 
   fi
+
+  cd ${_ORIGINAL_PWD};
 
 }
