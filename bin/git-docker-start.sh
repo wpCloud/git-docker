@@ -172,6 +172,7 @@ function GitDockerStart {
 
     ## Create New Instance
     if [[ ${GIT_DOCKER_SILENT} != true ]]; then echo "[git/docker] Starting server <${_HOSTNAME}.${_BRANCH}>."; fi;
+
     NEW_CONTAINER_ID=$(docker run -itd --restart=always \
       --name=${_CONTAINER_NAME} \
       --hostname=${_HOSTNAME} \
